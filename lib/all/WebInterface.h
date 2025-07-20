@@ -3,7 +3,7 @@
 #include <WebDisplay.h>
 #include <Settings.h>
 
-class FillState;
+class ReservoirFillState;
 
 #ifndef WEBINTERFACE_H
 #define WEBINTERFACE_H
@@ -25,7 +25,7 @@ public:
     }
 
 private:
-    FillState *fillState_; // Pointer to FillState for accessing touch sensors
+    ReservoirFillState *fillState_; // Pointer to FillState for accessing touch sensors
     WebServer server;
     std::vector<std::pair<String, WebDisplayBase*>> displays_;
 

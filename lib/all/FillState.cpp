@@ -1,35 +1,115 @@
-#include <FillState.h>
+#include "FillState.h"
 #include <LoggingBase.h>
+#include <Settings.h>
 
-void FillState::begin() {
-    pinMode(touch5percentPin_, INPUT);
-    pinMode(touch50percentPin_, INPUT);
-    pinMode(touch75percentPin_, INPUT);
-    pinMode(touch100percentPin_, INPUT);
+// ─────────────────────────────────── ReservoirFillState ─────────────────────────
+
+ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
+                                       const std::vector<float>&  fractions,
+                                       uint32_t                   touchThreshold)
+: touchPins_(touchPins),
+  fractions_(fractions),
+  threshold_(touchThreshold),
+  rawValues_(touchPins.size(), 0)
+{
+    if (touchPins_.empty()) {
+        gLogger->println("ReservoirFillState: ERROR: at least one sensor required!");
+    }
+    if (fractions_.size() != touchPins_.size()) {
+        gLogger->println("ReservoirFillState: ERROR: pin & fraction vectors differ in length!");
+    }
+    // last fraction should be 1.0; warn if not
+    if (!fractions_.empty() && (abs(fractions_.back() - 1.0f) > 1e-3f)) {
+        gLogger->println("ReservoirFillState: WARNING: top-sensor fraction is not 1.0");
+    }
 }
 
-void FillState::update() {
-    //reads level
+void ReservoirFillState::begin()
+{
+    for (uint8_t pin : touchPins_) {
+        pinMode(pin, INPUT);
+    }
+}
+
+void ReservoirFillState::update()
+{
+    const size_t N = touchPins_.size();
+    std::vector<bool> active(N, false);
+    threshold_ = settings.thTouch; // update threshold from settings
+
+    // 1) read all sensors
+    for (size_t i = 0; i < N; ++i) {
+        rawValues_[i] = touchRead(touchPins_[i]);
+        active[i]     = rawValues_[i] > threshold_;
+    }
+
+    // 2) minimum guaranteed fill  (bottom-to-top)
     level_ = 0.0f;
-    if (touchRead(touch5percentPin_) > settings.th5percent)
-        level_ = 5.0f;
-    if (touchRead(touch50percentPin_) > settings.th50percent)
-        level_ = 50.0f;
-    if (touchRead(touch75percentPin_) > settings.th75percent)
-        level_ = 75.0f;
-    if (touchRead(touch100percentPin_) > settings.th100percent)
-        level_ = 100.0f;
-    else
-        level_ = 0.0f; // no touch detected, reset to 0%
-    //now sanity checks, if e.g. 50% is detected, but 5% is not, then sth is wrong and we should print an error
-    if (level_ >= 50.0f && touchRead(touch5percentPin_) < settings.th5percent) {
-        gLogger->println("Warning: 50% detected, but 5% not detected! Check sensor calibration.");
+    for (size_t i = 0; i < N; ++i) {
+        if (active[i]) {
+            level_ = fractions_[i] * 100.0f;
+        }
     }
-    if (level_ >= 75.0f && touchRead(touch50percentPin_) < settings.th50percent) {
-        gLogger->println("Warning: 75% detected, but 50% not detected! Check sensor calibration.");
+
+    // 3) minimum guaranteed empty (top-1 down to bottom)
+    emptyLevel_ = 0.0f;               // if top sensor is dry: unknown empty → 0 %
+    for (int i = static_cast<int>(N) - 2; i >= 0; --i) {
+        if (!active[i]) {
+            emptyLevel_ = 100.0f - fractions_[i] * 100.0f;
+            break;
+        }
     }
-    if (level_ >= 100.0f && touchRead(touch75percentPin_) < settings.th75percent) {
-        gLogger->println("Warning: 100% detected, but 75% not detected! Check sensor calibration.");
+
+    // 4) bookkeeping
+    capacity_    = settings.totalVolume;     // litres
+    temperature_ = 20.0f;                    // default
+
+    // 5) sanity checks
+    if (level_ < 0.0f || level_ > 100.0f) {
+        gLogger->println("ReservoirFillState: Invalid level: " + String(level_) + "%");
+        level_ = 0.0f;
     }
-    
+    for (size_t i = 1; i < N; ++i) {
+        if (active[i] && !active[i-1]) {
+            gLogger->println("ReservoirFillState: Sensor " + String(i+1) +
+                             " active while sensor " + String(i) + " is inactive");
+        }
+    }
+}
+
+// ─────────────────────────────────── FillStateDisplay ───────────────────────────
+
+FillStateDisplay::FillStateDisplay(ReservoirFillState* fillState)
+: fillState_(fillState),
+  fillLevelDisplay_("Fill_Level", 1, settings.totalVolume, " l")
+{
+    const size_t N = fillState_->sensorCount();
+    touchDisplays_.reserve(N);
+    for (size_t i = 0; i < N; ++i) {
+        touchDisplays_.emplace_back("Touch_" + String(i+1), 1, 0);
+    }
+}
+
+void FillStateDisplay::begin() { /* nothing yet */ }
+
+void FillStateDisplay::update()
+{
+    const size_t N = fillState_->sensorCount();
+    for (size_t i = 0; i < N; ++i) {
+        touchDisplays_[i].update(fillState_->rawRead(i));
+    }
+    fillLevelDisplay_.setMaxVal(fillState_->capacity());
+    fillLevelDisplay_.update(fillState_->litersFullMin());
+}
+
+std::vector<std::pair<String, WebDisplayBase*>>
+FillStateDisplay::getDisplays()
+{
+    std::vector<std::pair<String, WebDisplayBase*>> out;
+    for (size_t i = 0; i < touchDisplays_.size(); ++i) {
+        out.emplace_back("Touch " + String(i+1) + " ADC value",
+                         &touchDisplays_[i]);
+    }
+    out.emplace_back("Fill Level (min)", &fillLevelDisplay_);
+    return out;
 }

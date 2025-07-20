@@ -1,90 +1,75 @@
+#ifndef FILLSTATE_H
+#define FILLSTATE_H
 
 #include <Arduino.h>
+#include <vector>
 #include <Settings.h>
 #include <WebDisplay.h>
+#include <SharedDataFormats.h>
 
-class FillState {
+/**
+ * ReservoirFillState
+ * ------------------
+ * Derives from SharedDataFormats::ReservoirInfo and turns a list of capacitive
+ * touch sensors into a bounded fill-level estimate.
+ *
+ *  • touchPins[i]      — GPIO number of sensor i (bottom-to-top)
+ *  • fractions[i]      — geometric height of sensor i  (0.0 … 1.0)
+ *                        The top sensor should be 1.0; others < 1.0.
+ *  • touchThreshold    — raw ADC threshold used for ALL sensors
+ */
+class ReservoirFillState : public SharedDataFormats::ReservoirInfo
+{
 public:
-    FillState(
-        uint8_t touch5percentPin,
-        uint8_t touch50percentPin,
-        uint8_t touch75percentPin, // default pin for empty state
-        uint8_t touch100percentPin // default pin for full state
-    ) : touch5percentPin_(touch5percentPin), touch50percentPin_(touch50percentPin),
-        touch75percentPin_(touch75percentPin), touch100percentPin_(touch100percentPin) {}
+    ReservoirFillState(const std::vector<uint8_t>& touchPins,
+                       const std::vector<float>&  fractions,
+                       uint32_t                   touchThreshold);
 
-        
+    void begin();          ///< call from setup()
+    void update();         ///< call periodically
 
-    void begin();
+    // setters
+    void setTouchThreshold(uint32_t threshold) { threshold_ = threshold; }
+    void setFractions(const std::vector<float>& fractions) { fractions_ = fractions; }
 
+    // convenience helpers  ----------------------------------------------
+    bool  isEmpty()  const { return level_ < 5.0f; }
+    bool  isFull()   const { return level_ >= 100.0f; }
+
+    // sensor access ------------------------------------------------------
+    size_t            sensorCount()            const { return rawValues_.size(); }
+    uint32_t          rawRead(size_t idx)      const { return rawValues_[idx]; }
+    const std::vector<uint32_t>& rawReads()    const { return rawValues_; }
+
+private:
+    std::vector<uint8_t>  touchPins_;
+    std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
+    uint32_t              threshold_;   ///< common ADC threshold
+    std::vector<uint32_t> rawValues_;   ///< updated each cycle
+};
+
+/**
+ * FillStateDisplay
+ * ----------------
+ * A thin wrapper that exposes WebDisplay objects for the raw ADC readings
+ * and for the calculated fill level.  It builds everything dynamically
+ * from the sensor count.
+ */
+class FillStateDisplay
+{
+public:
+    explicit FillStateDisplay(ReservoirFillState* fillState);
+
+    void begin();   ///< optional (does nothing for now)
     void update();
 
-    bool isEmpty() const {
-        return level_ < 5.0f;
-    }
-    bool isFull() const {
-        return level_ >= 100.0f;
-    }
-    float level() const {
-        return level_;
-    }
-
-    uint32_t touch5percentRead() const {
-        return touchRead(touch5percentPin_);
-    }
-    uint32_t touch50percentRead() const {
-        return touchRead(touch50percentPin_);
-    }
-    uint32_t touch75percentRead() const {
-        return touchRead(touch75percentPin_);
-    }
-    uint32_t touch100percentRead() const {
-        return touchRead(touch100percentPin_);
-    }
+    /// Returns references to all display objects for easy registration
+    std::vector<std::pair<String, WebDisplayBase*>> getDisplays();
 
 private:
-    //pins
-    uint8_t touch5percentPin_;
-    uint8_t touch50percentPin_;
-    uint8_t touch75percentPin_;
-    uint8_t touch100percentPin_;
-    
-    float level_;
+    ReservoirFillState*               fillState_;
+    std::vector<WebDisplay<uint32_t>> touchDisplays_;
+    WebBarDisplay<float>              fillLevelDisplay_;
 };
 
-
-class FillStateDisplay {
-    public:
-    FillStateDisplay(FillState *fillState) : fillState_(fillState),
-    touch5percentDisplay_("Touch_5", 1, 0),
-    touch50percentDisplay_("Touch_50", 1, 0),
-    touch75percentDisplay_("Touch_75", 1, 0),
-    touch100percentDisplay_("Touch_100", 1, 0),
-    fillLevelDisplay_("Fill_Level", 1, 0.0f)
-    {}
-
-    void update() {
-        touch5percentDisplay_.update(fillState_->touch5percentRead());
-        touch50percentDisplay_.update(fillState_->touch50percentRead());
-        touch75percentDisplay_.update(fillState_->touch75percentRead());
-        touch100percentDisplay_.update(fillState_->touch100percentRead());
-        fillLevelDisplay_.update(fillState_->level());
-    }
-    std::vector<std::pair<String, WebDisplayBase*>> getDisplays()  {
-        return {
-            {"Touch 5% adc value", &touch5percentDisplay_},
-            {"Touch 50% adc value", &touch50percentDisplay_},
-            {"Touch 75% adc value", &touch75percentDisplay_},
-            {"Touch 100% adc value", &touch100percentDisplay_},
-            {"Fill Level", &fillLevelDisplay_}
-        };
-    }
-
-private:
-    FillState *fillState_;
-    WebDisplay<uint32_t> touch5percentDisplay_;
-    WebDisplay<uint32_t> touch50percentDisplay_;
-    WebDisplay<uint32_t> touch75percentDisplay_;
-    WebDisplay<uint32_t> touch100percentDisplay_;
-    WebBarDisplay<float> fillLevelDisplay_;
-};
+#endif // FILLSTATE_H

@@ -9,10 +9,10 @@ class Settings : public SettingsBlockBase {
     public:
     Settings(): SettingsBlockBase("settings", "/settings"){}
 
-    DEF_SETTING(int, th5percent, "Threshold 5%", 20000,1);
-    DEF_SETTING(int, th50percent, "Threshold 50%", 20000,1);
-    DEF_SETTING(int, th75percent, "Threshold 75%", 20000,1);
-    DEF_SETTING(int, th100percent, "Threshold 100%", 20000,1);
+    DEF_SETTING(int, thTouch, "Touch Threshold (ADC)", 24000,1);
+    DEF_SETTING(float, totalVolume, "Total Volume (L)", 10.0f, 0.1f);
+
+    DEF_SETTING(String, injUrl, "Injector hostname", "injector.local", 0);
 
 };
 
