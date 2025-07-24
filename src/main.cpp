@@ -14,6 +14,7 @@
 #include <TCPMessenger.h>
 #include <EncryptionHandler.h>
 #include <WebSettings.h>
+#include <Scheduler.h>
 
 TimeManager timeManager;
 
@@ -28,6 +29,27 @@ TCPMessenger tcpMessenger(&enc);
 
 DebugLED led; // Use built-in LED for debugging
 
+
+Scheduler scheduler; // Global scheduler for periodic tasks
+
+void send(){
+   if (((String)settings.injUrl).length() > 0) {
+       led.setBlue(); // Set the LED to blue while sending
+       auto res = tcpMessenger.sendToHost(
+           fillState, 0,//obj, channel
+           settings.injUrl);
+       if (res != TCPMSG_OK) {
+           gLogger->println("Failed to send fill state: " + String(res));
+           led.setRed(); // Set the LED to red on failure
+       }
+       else {
+           led.setOff(); // Set the LED to green on success
+       }
+   }
+   else {
+       led.setColor(10, 0, 10); // Set the LED to purple if no URL is set
+   }
+}
 
 
 void setup() {
@@ -82,51 +104,31 @@ void setup() {
   tcpMessenger.beginServer(); // Start TCP server on port 12345
 
   gLogger->println("TCP Messenger server started on port 12345");
- 
+
+
+  ///now set up scheduler to update the fill state every second
+  scheduler.addTimedTask([&]() {
+        fillState.update();
+        fillStateDisplay.update();
+  }, 1000,
+     true, // Repeat every second
+     1000); // Interval of 1 second)
+
+  // after that add a task to send the fill state every 10 seconds
+  scheduler.addTimedTask(
+        [&]() {
+            send();
+    }, 10000, true, 10000); // Repeat every 10 seconds
+
   led.setGreen(); // Set the LED to green to indicate successful setup
   delay(1000); // Allow time for the LED to show green before starting the loop
   led.setOff(); // Turn off the LED after setup
 }
 
-uint32_t lastSendTime = 0;
-constexpr uint32_t SEND_INTERVAL_HI_FILL = 3000; // 3 seconds if almost full
-constexpr uint32_t SEND_INTERVAL_NORMAL = 30000; // 30 seconds otherwise
-uint32_t sendInterval = SEND_INTERVAL_NORMAL;
 //send status every second for now
 
 void loop() {
   wifi.loop();
-  webInterface.loop();
-  fillState.update();
-
-  // Example usage of WebDisplay
-  fillState.update();
-  fillStateDisplay.update();
-
-  //clear incoming messages by ignoring them
-  if(millis() - lastSendTime > sendInterval) {
-      lastSendTime = millis();
-      if(fillState.level() > 70.0f && fillState.level() < 100.0f) {
-          sendInterval = SEND_INTERVAL_HI_FILL; // send more frequently if almost full
-      } else {
-          sendInterval = SEND_INTERVAL_NORMAL; // normal interval otherwise
-      }
-      //send to settings.injUrl
-      if(((String)settings.injUrl).length() > 0) {
-          led.setBlue(); // Set the LED to blue while sending
-          auto res = tcpMessenger.sendToHost(
-              fillState, 0,//obj, channel
-              settings.injUrl);
-          if(res != TCPMSG_OK) {
-              gLogger->println("Failed to send fill state: " + String(res));
-              led.setRed(); // Set the LED to red on failure
-          }
-          else {
-              led.setOff(); // Set the LED to green on success
-          }
-      }
-      else{
-        led.setColor(10,0,10); // Set the LED to purple if no URL is set
-      }
-  }
+  scheduler.loop(); // Run the scheduler to execute periodic tasks
+  webInterface.loop(); // Handle web interface updates
 }

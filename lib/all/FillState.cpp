@@ -7,46 +7,51 @@
 ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
                                        const std::vector<float>&  fractions,
                                        uint32_t                   touchThreshold)
-: touchPins_(touchPins),
-  fractions_(fractions),
-  threshold_(touchThreshold),
-  rawValues_(touchPins.size(), 0)
-{
-    if (touchPins_.empty()) {
+: touchSensors_(),
+  fractions_(fractions)
+  {
+    if (touchPins.empty()) {
         gLogger->println("ReservoirFillState: ERROR: at least one sensor required!");
     }
-    if (fractions_.size() != touchPins_.size()) {
+    if (fractions_.size() != touchPins.size()) {
         gLogger->println("ReservoirFillState: ERROR: pin & fraction vectors differ in length!");
     }
     // last fraction should be 1.0; warn if not
     if (!fractions_.empty() && (abs(fractions_.back() - 1.0f) > 1e-3f)) {
         gLogger->println("ReservoirFillState: WARNING: top-sensor fraction is not 1.0");
     }
+    // create touch sensors
+    touchSensors_.reserve(touchPins.size());
+    for (uint8_t pin : touchPins) {
+        touchSensors_.emplace_back(pin, touchThreshold, TOUCH_HYSTERESIS);
+    }
 }
 
 void ReservoirFillState::begin()
 {
-    for (uint8_t pin : touchPins_) {
-        pinMode(pin, INPUT);
+    for (auto& sensor : touchSensors_) {
+        sensor.begin();
     }
 }
 
 void ReservoirFillState::update()
 {
-    const size_t N = touchPins_.size();
-    std::vector<bool> active(N, false);
-    threshold_ = settings.thTouch; // update threshold from settings
+    const size_t N = touchSensors_.size();
+
+    //reset thresholds
+    for (auto& sensor : touchSensors_) {
+        sensor.setThreshold(settings.thTouch); // update threshold from settings
+    }
 
     // 1) read all sensors
-    for (size_t i = 0; i < N; ++i) {
-        rawValues_[i] = touchRead(touchPins_[i]);
-        active[i]     = rawValues_[i] > threshold_;
+    for (auto & sensor : touchSensors_) {
+        sensor.update();
     }
 
     // 2) minimum guaranteed fill  (bottom-to-top)
     level_ = 0.0f;
     for (size_t i = 0; i < N; ++i) {
-        if (active[i]) {
+        if (touchSensors_[i].isActive()) {
             level_ = fractions_[i] * 100.0f;
         }
     }
@@ -54,7 +59,7 @@ void ReservoirFillState::update()
     // 3) minimum guaranteed empty (top-1 down to bottom)
     emptyLevel_ = 0.0f;               // if top sensor is dry: unknown empty → 0 %
     for (int i = static_cast<int>(N) - 2; i >= 0; --i) {
-        if (!active[i]) {
+        if (!touchSensors_[i].isActive()) {
             emptyLevel_ = 100.0f - fractions_[i] * 100.0f;
             break;
         }
@@ -70,7 +75,7 @@ void ReservoirFillState::update()
         level_ = 0.0f;
     }
     for (size_t i = 1; i < N; ++i) {
-        if (active[i] && !active[i-1]) {
+        if (touchSensors_[i].isActive() && !touchSensors_[i-1].isActive()) {
             gLogger->println("ReservoirFillState: Sensor " + String(i+1) +
                              " active while sensor " + String(i) + " is inactive");
         }

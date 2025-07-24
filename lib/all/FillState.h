@@ -6,6 +6,9 @@
 #include <Settings.h>
 #include <WebDisplay.h>
 #include <SharedDataFormats.h>
+#include <TouchSensor.h>
+
+#define TOUCH_HYSTERESIS 500 // default hysteresis for touch sensors
 
 /**
  * ReservoirFillState
@@ -29,7 +32,8 @@ public:
     void update();         ///< call periodically
 
     // setters
-    void setTouchThreshold(uint32_t threshold) { threshold_ = threshold; }
+    const std::vector<TouchSensor>& getTouchPins() const { return touchSensors_; }
+    std::vector<TouchSensor>& getTouchPins() { return touchSensors_; }
     void setFractions(const std::vector<float>& fractions) { fractions_ = fractions; }
 
     // convenience helpers  ----------------------------------------------
@@ -37,15 +41,20 @@ public:
     bool  isFull()   const { return level_ >= 100.0f; }
 
     // sensor access ------------------------------------------------------
-    size_t            sensorCount()            const { return rawValues_.size(); }
-    uint32_t          rawRead(size_t idx)      const { return rawValues_[idx]; }
-    const std::vector<uint32_t>& rawReads()    const { return rawValues_; }
+    size_t            sensorCount()            const { return touchSensors_.size(); }
+    uint32_t          rawRead(size_t idx)      const { return touchSensors_[idx].lastValue(); }
+    std::vector<uint32_t> rawReads()    const { 
+        std::vector<uint32_t> reads;
+        reads.reserve(touchSensors_.size());
+        for (const auto& ts : touchSensors_) {
+            reads.push_back(ts.lastValue());
+        }
+        return reads;
+    }
 
 private:
-    std::vector<uint8_t>  touchPins_;
+    std::vector<TouchSensor>  touchSensors_;
     std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
-    uint32_t              threshold_;   ///< common ADC threshold
-    std::vector<uint32_t> rawValues_;   ///< updated each cycle
 };
 
 /**
