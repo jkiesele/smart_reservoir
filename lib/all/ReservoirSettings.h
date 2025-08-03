@@ -25,6 +25,9 @@ public:
     DEF_SETTING(float, circTDay,   "Circ time day [min]",    10.0f, 1.0f);
     DEF_SETTING(float, circTNight, "Circ time night [min]",   5.0f, 1.0f);
 
+    //override sanityCheck() 
+    bool sanityCheck() override ;
+
 };
 
 

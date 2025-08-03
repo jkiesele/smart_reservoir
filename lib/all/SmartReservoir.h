@@ -28,7 +28,7 @@ public:
   SmartReservoir(const std::vector<uint8_t>& touchPins,
                  const std::vector<float>&  fractions,
                  uint32_t                   touchThreshold,
-                 bool                       hasCirculationPump);
+                 int                       circulationPumpPin = -1);
 
   // Replaces Arduino setup()
   void begin();
@@ -41,7 +41,7 @@ private:
   std::vector<uint8_t> touchPins_;
   std::vector<float>   fractions_;
   uint32_t             touchThreshold_{0};
-  bool                 hasCirculationPump_{false};
+  int                 circulationPumpPin_{-1};
 
   // ---- Former globals (now members)
   ReservoirSettings   settings_;
@@ -58,4 +58,7 @@ private:
 
   // ---- Helpers (former free functions)
   void sendState();
+  void scheduleCirculationPump();
+  void safeTurnOnCirculationPump();
+  void turnOffCirculationPump();
 };

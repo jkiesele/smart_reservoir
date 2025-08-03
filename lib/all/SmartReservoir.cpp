@@ -6,13 +6,13 @@
 SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
                                const std::vector<float>&  fractions,
                                uint32_t                   touchThreshold,
-                               bool                       hasCirculationPump)
+                               int                       circulationPumpPin)
 : touchPins_(touchPins),
   fractions_(fractions),
   touchThreshold_(touchThreshold),
-  hasCirculationPump_(hasCirculationPump),
+  circulationPumpPin_(circulationPumpPin),
   settings_(),
-  circPumpSettings_(), //initialized even if hasCirculationPump_ is false, but then ignore later
+  circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
   fillState_(touchPins_, fractions_, touchThreshold_, &settings_),
   fillStateDisplay_(&fillState_),
@@ -39,8 +39,11 @@ void SmartReservoir::begin() {
 
   fillState_.begin();
   settings_.begin();
-  if(hasCirculationPump_) {
+  if(circulationPumpPin_>=0) {
     circPumpSettings_.begin();
+    //set up output GPIO
+    pinMode(circulationPumpPin_, OUTPUT);
+    digitalWrite(circulationPumpPin_, LOW); // ensure pump is off initially
   }
 
   Serial.begin(115200);
@@ -76,7 +79,7 @@ void SmartReservoir::begin() {
   }
   // Add settings display
   webInterface_.addSettingsDisplay("Reservoir Settings", &settings_);
-  if (hasCirculationPump_) {
+  if (circulationPumpPin_>=0) {
       webInterface_.addSettingsDisplay("Circulation Pump Settings", &circPumpSettings_);
   }
 
@@ -107,6 +110,10 @@ void SmartReservoir::begin() {
     10000  // interval
   );
 
+  if (circulationPumpPin_ >= 0) {
+    scheduleCirculationPump();
+  }
+
   led_.setGreen();
   delay(1000);
   led_.setOff();
@@ -135,3 +142,64 @@ void SmartReservoir::sendState() {
     led_.setColor(10, 0, 10);
   }
 }
+
+void SmartReservoir::scheduleCirculationPump(){
+    if(circulationPumpPin_<0) 
+       return;
+
+    int periodMin = circPumpSettings_.circPDay;
+    // if this is set to zero (at the moment), just schedule another check in 1 minute and return, don't run the pump
+    // this allows to disable the pump from the web interface without changing the code
+    if (periodMin <= 0) {
+        scheduler_.addTimedTask([this]() {
+            scheduleCirculationPump();
+        }, 1 * MINUTE, false); // don't repeat
+        return;
+    }
+    // it is already ensured that the circulation period is at least as long as the time the pump is on during day or night
+
+    //schedule
+    scheduler_.addTimedTask([this]() {
+        // turn off after timeMS
+        int runMin = circPumpSettings_.circTDay; 
+
+        if(timeManager_.isNightTime()) {
+            runMin = circPumpSettings_.circTNight;
+        }
+        if(runMin <= 0){
+            turnOffCirculationPump(); // somewhat obsolete but safer
+            scheduleCirculationPump(); // this is safe in the scheduler implementation!
+            return;
+        }
+        safeTurnOnCirculationPump();
+
+        scheduler_.addTimedTask([this]() {
+            turnOffCirculationPump();
+            // Reschedule the next circulation pump run
+            // the scheduler can deal with nested tasks and will run them in order
+            scheduleCirculationPump();
+        }, 
+        TimeManager::minToMs(runMin), 
+        false); // do not repeat
+
+    }, 
+    TimeManager::minToMs(periodMin), 
+    false); // don't repeat, self-reschedule
+
+}
+
+  void SmartReservoir::safeTurnOnCirculationPump(){
+    if(circulationPumpPin_<0) 
+       return;
+    //check if fill state is high enough
+    if (fillState_.litersFullMin() < circPumpSettings_.minLevel){
+        gLogger->println("Circulation pump not turned ON: fill level too low");
+        return;
+    }
+    digitalWrite(circulationPumpPin_, HIGH);
+  }
+  void SmartReservoir::turnOffCirculationPump(){
+    if(circulationPumpPin_<0) 
+       return;
+    digitalWrite(circulationPumpPin_, LOW);
+  }
