@@ -76,9 +76,9 @@ void SmartReservoir::begin() {
     webInterface_.addDisplay(display.first, display.second);
   }
   // Add settings display
-  webInterface_.addSettingsDisplay("Reservoir Settings", &settings_);
+  webInterface_.addSettings("Reservoir Settings", &settings_);
   if (circulationPumpPin_>=0) {
-      webInterface_.addSettingsDisplay("Circulation Pump Settings", &circPumpSettings_);
+      webInterface_.addSettings("Circulation Pump Settings", &circPumpSettings_);
   }
 
   webInterface_.begin();

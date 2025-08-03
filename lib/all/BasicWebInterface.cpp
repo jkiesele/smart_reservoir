@@ -42,7 +42,8 @@ void BasicWebInterface::setupRoutes() {
     });
 }
 
-String BasicWebInterface::generateHTML() const {
+
+String BasicWebInterface::generateHeaderAndStatusHtml() const{
     String html = R"(
     <!DOCTYPE html>
     <html>
@@ -55,16 +56,36 @@ String BasicWebInterface::generateHTML() const {
     )";
 
     html += WebStatus::createSystemStatHtmlFragment();
+    return html;
+}
 
+String BasicWebInterface::generateDisplayHtml() const{
+    String html;
+    html.reserve(1024);
     for (const auto& display : displays_) {
         html += "<h2>" + display.first + "</h2>";
         html += display.second->createHtmlFragment();
     }
-    html += "<h2>ReservoirSettings</h2>";
+    return html;
+
+}
+String BasicWebInterface::generateSettingsHtml() const{
+    String html;
+    html.reserve(1024);
     for(const auto& settingsDisplay : settingsDisplays_) {
         html += "<h3>" + settingsDisplay.first + "</h3>";
         html += settingsDisplay.second->generateHTML();
     }
-    html += "</body></html>";
+    return html;
+
+}
+
+String BasicWebInterface::generateHTML() const {
+    String html = generateHeaderAndStatusHtml();
+
+    html += generateDisplayHtml();
+    html += generateSettingsHtml();
+    html += generateFooterHtml();
+
     return html;
 }

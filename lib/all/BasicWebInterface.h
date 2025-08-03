@@ -16,14 +16,22 @@ public:
     }
 
     void setupRoutes();
-    String generateHTML() const;
+    // can override any of those to change the HTML output
+    virtual String generateHTML() const;
+    virtual String generateHeaderAndStatusHtml() const;
+    virtual String generateDisplayHtml() const;
+    virtual String generateSettingsHtml() const;
+    String generateFooterHtml() const {
+        return "</body></html>";
+    }
 
     void addDisplay(const String & descText, WebDisplayBase *display) {
         displays_.emplace_back(descText, display);
     }
-    void addSettingsDisplay(const String & descText, SettingsBlockBase *settings) {
+    void addSettings(const String & descText, SettingsBlockBase *settings) {
         settingsDisplays_.emplace_back(descText, settings);
     }
+
 
 private:
     WebServer server;
