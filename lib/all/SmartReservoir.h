@@ -27,7 +27,6 @@ class SmartReservoir {
 public:
   SmartReservoir(const std::vector<uint8_t>& touchPins,
                  const std::vector<float>&  fractions,
-                 uint32_t                   touchThreshold,
                  int                       circulationPumpPin = -1);
 
   // Replaces Arduino setup()
@@ -40,7 +39,6 @@ private:
   // ---- Configuration copied from ctor args
   std::vector<uint8_t> touchPins_;
   std::vector<float>   fractions_;
-  uint32_t             touchThreshold_{0};
   int                 circulationPumpPin_{-1};
 
   // ---- Former globals (now members)

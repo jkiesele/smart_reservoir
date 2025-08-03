@@ -5,16 +5,14 @@
 
 SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
                                const std::vector<float>&  fractions,
-                               uint32_t                   touchThreshold,
                                int                       circulationPumpPin)
 : touchPins_(touchPins),
   fractions_(fractions),
-  touchThreshold_(touchThreshold),
   circulationPumpPin_(circulationPumpPin),
   settings_(),
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
-  fillState_(touchPins_, fractions_, touchThreshold_, &settings_),
+  fillState_(touchPins_, fractions_, &settings_),
   fillStateDisplay_(&fillState_),
   enc_(&secret::encryption_keys),
   tcpMessenger_(&enc_),

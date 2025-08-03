@@ -6,7 +6,6 @@
 
 ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
                                        const std::vector<float>&  fractions,
-                                       uint32_t                   touchThreshold,
                                        const ReservoirSettings* settings)
 : touchSensors_(),
   fractions_(fractions),
@@ -26,7 +25,7 @@ ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
     // create touch sensors
     touchSensors_.reserve(touchPins.size());
     for (uint8_t pin : touchPins) {
-        touchSensors_.emplace_back(pin, touchThreshold, TOUCH_HYSTERESIS);
+        touchSensors_.emplace_back(pin, settings_->thTouch, TOUCH_HYSTERESIS);
     }
 }
 

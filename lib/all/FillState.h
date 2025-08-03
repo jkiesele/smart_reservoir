@@ -26,7 +26,6 @@ class ReservoirFillState : public SharedDataFormats::ReservoirInfo
 public:
     ReservoirFillState(const std::vector<uint8_t>& touchPins,
                        const std::vector<float>&  fractions,
-                       uint32_t                   touchThreshold,
                        const ReservoirSettings* settings);
 
     void begin();          ///< call from setup()
