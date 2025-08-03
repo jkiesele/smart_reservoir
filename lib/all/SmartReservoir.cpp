@@ -12,6 +12,7 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   touchThreshold_(touchThreshold),
   hasCirculationPump_(hasCirculationPump),
   settings_(),
+  circPumpSettings_(), //initialized even if hasCirculationPump_ is false, but then ignore later
   // Construct fill state using ctor-exposed parameters and pointer to settings_
   fillState_(touchPins_, fractions_, touchThreshold_, &settings_),
   fillStateDisplay_(&fillState_),
@@ -38,6 +39,9 @@ void SmartReservoir::begin() {
 
   fillState_.begin();
   settings_.begin();
+  if(hasCirculationPump_) {
+    circPumpSettings_.begin();
+  }
 
   Serial.begin(115200);
   Serial.println("Starting system initialization...");
@@ -72,6 +76,9 @@ void SmartReservoir::begin() {
   }
   // Add settings display
   webInterface_.addSettingsDisplay("Reservoir Settings", &settings_);
+  if (hasCirculationPump_) {
+      webInterface_.addSettingsDisplay("Circulation Pump Settings", &circPumpSettings_);
+  }
 
   webInterface_.begin();
   gLogger->println("Web interface started");

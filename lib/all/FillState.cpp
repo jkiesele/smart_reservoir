@@ -10,7 +10,8 @@ ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
                                        const ReservoirSettings* settings)
 : touchSensors_(),
   fractions_(fractions),
-  settings_(settings)
+  settings_(settings),
+    printedWarning_(false) // Initialize warning flag
   {
     if (touchPins.empty()) {
         gLogger->println("ReservoirFillState: ERROR: at least one sensor required!");
@@ -71,16 +72,26 @@ void ReservoirFillState::update()
     capacity_    = settings_->totalVolume;     // litres
     temperature_ = 20.0f;                    // default
 
+    bool allgood = true;
+
     // 5) sanity checks
     if (level_ < 0.0f || level_ > 100.0f) {
         gLogger->println("ReservoirFillState: Invalid level: " + String(level_) + "%");
         level_ = 0.0f;
+        allgood = false;
     }
     for (size_t i = 1; i < N; ++i) {
-        if (touchSensors_[i].isActive() && !touchSensors_[i-1].isActive()) {
+        if (touchSensors_[i].isActive() 
+            && !touchSensors_[i-1].isActive()
+            && !printedWarning_) {
             gLogger->println("ReservoirFillState: Sensor " + String(i+1) +
                              " active while sensor " + String(i) + " is inactive");
+            printedWarning_ = true; // only print once
+            allgood = false;
         }
+    }
+    if(allgood) {
+        printedWarning_ = false; // reset warning flag if all is good
     }
 }
 

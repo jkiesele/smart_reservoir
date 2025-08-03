@@ -59,6 +59,7 @@ private:
     std::vector<TouchSensor>  touchSensors_;
     std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
     const ReservoirSettings* settings_;
+    bool printedWarning_; ///< true if we printed a warning about sensor count
 };
 
 /**

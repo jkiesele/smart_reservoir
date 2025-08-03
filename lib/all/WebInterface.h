@@ -28,7 +28,6 @@ public:
     }
 
 private:
-    ReservoirFillState *fillState_; // Pointer to FillState for accessing touch sensors
     WebServer server;
     std::vector<std::pair<String, WebDisplayBase*>> displays_;
     std::vector<std::pair<String, SettingsBlockBase*>> settingsDisplays_;

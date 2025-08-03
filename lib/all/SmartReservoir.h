@@ -45,6 +45,7 @@ private:
 
   // ---- Former globals (now members)
   ReservoirSettings   settings_;
+  CirculationPumpSettings circPumpSettings_; // if hasCirculationPump_ is true
   ReservoirFillState  fillState_;          // depends on settings_ and ctor args
   FillStateDisplay    fillStateDisplay_;   // depends on fillState_
   EncryptionHandler   enc_;
