@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <vector>
-#include <Settings.h>
+#include <ReservoirSettings.h>
 #include <WebDisplay.h>
 #include <SharedDataFormats.h>
 #include <TouchSensor.h>
@@ -26,10 +26,13 @@ class ReservoirFillState : public SharedDataFormats::ReservoirInfo
 public:
     ReservoirFillState(const std::vector<uint8_t>& touchPins,
                        const std::vector<float>&  fractions,
-                       uint32_t                   touchThreshold);
+                       uint32_t                   touchThreshold,
+                       const ReservoirSettings* settings);
 
     void begin();          ///< call from setup()
     void update();         ///< call periodically
+
+    const ReservoirSettings* settings() const { return settings_; }
 
     // setters
     const std::vector<TouchSensor>& getTouchPins() const { return touchSensors_; }
@@ -55,6 +58,7 @@ public:
 private:
     std::vector<TouchSensor>  touchSensors_;
     std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
+    const ReservoirSettings* settings_;
 };
 
 /**

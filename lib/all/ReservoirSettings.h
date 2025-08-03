@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <WebSettings.h>
 
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#ifndef RESERVOIRSETTINGS_H
+#define RESERVOIRSETTINGS_H
 
-class Settings : public SettingsBlockBase {
+class ReservoirSettings : public SettingsBlockBase {
 
     public:
-    Settings(): SettingsBlockBase("settings", "/settings"){}
+    ReservoirSettings(): SettingsBlockBase("settings", "/settings"){}
 
     DEF_SETTING(int, thTouch, "Touch Threshold (ADC)", 24000,1);
     DEF_SETTING(float, totalVolume, "Total Volume (L)", 10.0f, 0.1f);
@@ -16,6 +16,6 @@ class Settings : public SettingsBlockBase {
 
 };
 
-extern Settings settings;
+//extern ReservoirSettings settings;
 
 #endif

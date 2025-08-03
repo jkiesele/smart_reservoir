@@ -1,14 +1,16 @@
 #include "FillState.h"
 #include <LoggingBase.h>
-#include <Settings.h>
+#include <ReservoirSettings.h>
 
 // ─────────────────────────────────── ReservoirFillState ─────────────────────────
 
 ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
                                        const std::vector<float>&  fractions,
-                                       uint32_t                   touchThreshold)
+                                       uint32_t                   touchThreshold,
+                                       const ReservoirSettings* settings)
 : touchSensors_(),
-  fractions_(fractions)
+  fractions_(fractions),
+  settings_(settings)
   {
     if (touchPins.empty()) {
         gLogger->println("ReservoirFillState: ERROR: at least one sensor required!");
@@ -40,7 +42,7 @@ void ReservoirFillState::update()
 
     //reset thresholds
     for (auto& sensor : touchSensors_) {
-        sensor.setThreshold(settings.thTouch); // update threshold from settings
+        sensor.setThreshold(settings_->thTouch); // update threshold from settings
     }
 
     // 1) read all sensors
@@ -66,7 +68,7 @@ void ReservoirFillState::update()
     }
 
     // 4) bookkeeping
-    capacity_    = settings.totalVolume;     // litres
+    capacity_    = settings_->totalVolume;     // litres
     temperature_ = 20.0f;                    // default
 
     // 5) sanity checks
@@ -86,7 +88,7 @@ void ReservoirFillState::update()
 
 FillStateDisplay::FillStateDisplay(ReservoirFillState* fillState)
 : fillState_(fillState),
-  fillLevelDisplay_("Fill_Level", 1, settings.totalVolume, " l")
+  fillLevelDisplay_("Fill_Level", 1, fillState->settings()->totalVolume, " l")
 {
     const size_t N = fillState_->sensorCount();
     touchDisplays_.reserve(N);

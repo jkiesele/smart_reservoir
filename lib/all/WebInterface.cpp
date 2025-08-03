@@ -23,7 +23,9 @@ void WebInterface::setupRoutes() {
            server.send(200, "application/json", display.second->routeText());
         });
     }
-    settings.setupRoutes(server);
+    for(const auto& settingsDisplay : settingsDisplays_) {
+        settingsDisplay.second->setupRoutes(server);
+    }
 
     // System status route (return JSON)
     server.on("/status", HTTP_GET, [this]() {
@@ -58,8 +60,11 @@ String WebInterface::generateHTML() const {
         html += "<h2>" + display.first + "</h2>";
         html += display.second->createHtmlFragment();
     }
-    html += "<h2>Settings</h2>";
-    html += settings.generateHTML();
+    html += "<h2>ReservoirSettings</h2>";
+    for(const auto& settingsDisplay : settingsDisplays_) {
+        html += "<h3>" + settingsDisplay.first + "</h3>";
+        html += settingsDisplay.second->generateHTML();
+    }
     html += "</body></html>";
     return html;
 }
