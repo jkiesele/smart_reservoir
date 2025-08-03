@@ -1,9 +1,9 @@
-#include <WebInterface.h>
+#include <BasicWebInterface.h>
 #include <SystemID.h>
 #include <ESPmDNS.h>
 #include "WebStatus.h"
 
-void WebInterface::begin() {
+void BasicWebInterface::begin() {
 
     if (!MDNS.begin(systemID.systemName())) {  // Replace with your desired hostname
         Serial.println("Error setting up MDNS responder!");
@@ -13,7 +13,7 @@ void WebInterface::begin() {
     server.begin();
     setupRoutes();
 }
-void WebInterface::setupRoutes() {
+void BasicWebInterface::setupRoutes() {
     server.on("/", HTTP_GET, [this]() {
         server.send(200, "text/html", generateHTML());
     });
@@ -42,7 +42,7 @@ void WebInterface::setupRoutes() {
     });
 }
 
-String WebInterface::generateHTML() const {
+String BasicWebInterface::generateHTML() const {
     String html = R"(
     <!DOCTYPE html>
     <html>

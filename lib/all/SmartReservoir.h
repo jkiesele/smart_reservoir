@@ -5,7 +5,7 @@
 
 // Arduino/project headers
 #include <Arduino.h>
-#include <WebInterface.h>
+#include <BasicWebInterface.h>
 #include <SystemID.h>
 #include <WebDisplay.h>
 #include <ReservoirSettings.h>
@@ -52,7 +52,7 @@ private:
   Scheduler           scheduler_;
   TimeManager         timeManager_;
   WiFiWrapper         wifi_;               // constructed with secrets
-  WebInterface        webInterface_;
+  BasicWebInterface        webInterface_;
 
   // ---- Helpers (former free functions)
   void sendState();

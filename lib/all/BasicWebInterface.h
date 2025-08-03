@@ -6,10 +6,10 @@
 #ifndef WEBINTERFACE_H
 #define WEBINTERFACE_H
 
-class WebInterface {
+class BasicWebInterface {
 public:
 
-    WebInterface(){}
+    BasicWebInterface(){}
     void begin();
     void loop(){
         server.handleClient();
