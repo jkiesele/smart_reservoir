@@ -3,8 +3,6 @@
 #include <WebDisplay.h>
 #include <WebSettings.h>
 
-class ReservoirFillState;
-
 #ifndef WEBINTERFACE_H
 #define WEBINTERFACE_H
 
