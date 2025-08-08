@@ -62,7 +62,9 @@ void ReservoirFillState::update()
     emptyLevel_ = 0.0f;               // if top sensor is dry: unknown empty → 0 %
     for (int i = static_cast<int>(N) - 2; i >= 0; --i) {
         if (!touchSensors_[i].isActive()) {
-            emptyLevel_ = 100.0f - fractions_[i] * 100.0f;
+            // how much is empty: fill fractions are increasing, but which fraction is empty now
+            float emptyFraction = (1 - fractions_[i]);
+            emptyLevel_ = 100.0f - emptyFraction * 100.0f;
             break;
         }
     }
