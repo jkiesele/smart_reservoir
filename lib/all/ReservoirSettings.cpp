@@ -42,5 +42,15 @@ bool CirculationPumpSettings::sanityCheck() {
         circPDay = circTNight; // use circTNight if larger
         ret = false;
     }
+    if(dutyCycle < 0) {
+        gLogger->println("CirculationPumpSettings: dutyCycle < 0");
+        dutyCycle = 0;
+        ret = false;
+    }
+    if(dutyCycle > 100) {
+        gLogger->println("CirculationPumpSettings: dutyCycle > 100");
+        dutyCycle = 100;
+        ret = false;
+    }
     return ret;
 }

@@ -21,6 +21,7 @@
 #include <EncryptionHandler.h>
 #include <WebSettings.h>
 #include <Scheduler.h>
+#include <WebOTAUpload.h>
 
 // The class that encapsulates your sketch behavior.
 class SmartReservoir {
@@ -59,4 +60,9 @@ private:
   void scheduleCirculationPump();
   void safeTurnOnCirculationPump();
   void turnOffCirculationPump();
+
+  const uint8_t pwmChannel_ = 0;
+  const uint8_t pwmRes_ = 8; //bits
+
+  WebOTAUpload otaUpload_; // URL for OTA updates
 };

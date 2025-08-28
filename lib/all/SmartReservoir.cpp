@@ -9,10 +9,10 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
 : touchPins_(touchPins),
   fractions_(fractions),
   circulationPumpPin_(circulationPumpPin),
-  settings_(),
+  settings_(touchPins.size()), // pass number of pads to settings
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
-  fillState_(touchPins_, fractions_, &settings_),
+  fillState_(touchPins_, fractions_, &settings_),//after settings_ is constructed!
   fillStateDisplay_(&fillState_),
   enc_(&secret::encryption_keys),
   tcpMessenger_(&enc_),
@@ -20,7 +20,8 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   scheduler_(),
   timeManager_(),
   wifi_(secret::ssid, secret::password),
-  webInterface_()
+  webInterface_(),
+  otaUpload_(secret::otaPassword)
 {
   // Any global init-at-declaration from the sketch that isn't tied to hardware
   // can be placed here if needed.
@@ -81,6 +82,8 @@ void SmartReservoir::begin() {
       webInterface_.addSettings("Circulation Pump Settings", &circPumpSettings_);
   }
 
+  webInterface_.addWebItem(&otaUpload_); // Add OTA upload handler
+
   webInterface_.begin();
   gLogger->println("Web interface started");
 
@@ -112,9 +115,18 @@ void SmartReservoir::begin() {
     scheduleCirculationPump();
   }
 
+  //init pwm for circulation pump if needed
+  ledcSetup(pwmChannel_, //channel
+    5000, //freq
+    pwmRes_); //resolution bits
+  ledcAttachPin(circulationPumpPin_, //pin
+    pwmChannel_);//channel
+
   led_.setGreen();
   delay(1000);
   led_.setOff();
+  //all good
+  otaUpload_.markAppValid(); // prevent rollback on next boot
 }
 
 void SmartReservoir::loop() {
@@ -194,10 +206,12 @@ void SmartReservoir::scheduleCirculationPump(){
         gLogger->println("Circulation pump not turned ON: fill level too low");
         return;
     }
-    digitalWrite(circulationPumpPin_, HIGH);
+    int duty = map(circPumpSettings_.dutyCycle, 0, 100, 0, (1 << pwmRes_) - 1);
+    ledcWrite(pwmChannel_, duty);
+    
   }
   void SmartReservoir::turnOffCirculationPump(){
     if(circulationPumpPin_<0) 
        return;
-    digitalWrite(circulationPumpPin_, LOW);
+    ledcWrite(pwmChannel_, 0);
   }

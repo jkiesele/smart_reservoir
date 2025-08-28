@@ -6,13 +6,18 @@
 
 class ReservoirSettings : public SettingsBlockBase {
 
+
     public:
-    ReservoirSettings(): SettingsBlockBase("settings", "/settings"){}
+    ReservoirSettings(int npads): SettingsBlockBase("settings", "/settings"), n_pads(npads) {}
 
-    DEF_SETTING(int, thTouch, "Touch Threshold (ADC)", 24000,1);
+    private:
+    int n_pads;//must come first
+
+    public:
+    DEF_SETTING_ARRAY(int, thsTouch, "Touch Thresholds (ADC)", 24000,1, n_pads);
     DEF_SETTING(float, totalVolume, "Total Volume (L)", 10.0f, 0.1f);
-
     DEF_SETTING(String, injUrl, "Injector hostname", "injector.local", 0);
+
 
 };
 
@@ -24,6 +29,7 @@ public:
     DEF_SETTING(float, circPDay,   "Circ period day [min]",  60.0f, 1.0f);
     DEF_SETTING(float, circTDay,   "Circ time day [min]",    10.0f, 1.0f);
     DEF_SETTING(float, circTNight, "Circ time night [min]",   5.0f, 1.0f);
+    DEF_SETTING(int, dutyCycle, "Duty cycle [%]",      100, 1);
 
     //override sanityCheck() 
     bool sanityCheck() override ;

@@ -8,7 +8,8 @@
 #include <SharedDataFormats.h>
 #include <TouchSensor.h>
 
-#define TOUCH_HYSTERESIS 500 // default hysteresis for touch sensors
+#define TOUCH_HYSTERESIS 200 // default hysteresis for touch sensors
+#define TOUCH_SAMPLES    3   // default number of samples for touch sensors
 
 /**
  * ReservoirFillState
@@ -26,7 +27,7 @@ class ReservoirFillState : public SharedDataFormats::ReservoirInfo
 public:
     ReservoirFillState(const std::vector<uint8_t>& touchPins,
                        const std::vector<float>&  fractions,
-                       const ReservoirSettings* settings);
+                        ReservoirSettings* settings);
 
     void begin();          ///< call from setup()
     void update();         ///< call periodically
@@ -57,7 +58,7 @@ public:
 private:
     std::vector<TouchSensor>  touchSensors_;
     std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
-    const ReservoirSettings* settings_;
+    ReservoirSettings* settings_;
     bool printedWarning_; ///< true if we printed a warning about sensor count
 };
 
