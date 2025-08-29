@@ -21,7 +21,7 @@ SmartReservoir reservoir(/*TOUCH_PINS*/ {3, 4, 5, 6},  /*FRACTIONS*/  {0.1f, 0.5
 void setup() {
   reservoir.begin();
   gLogger->print("Smart Reservoir System, software version: ");
-  gLogger->println("Rev 2.0c");
+  gLogger->println("Rev 2.0f");
 }
 
 void loop() {
