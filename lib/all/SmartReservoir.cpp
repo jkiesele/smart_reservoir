@@ -5,7 +5,8 @@
 
 SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
                                const std::vector<float>&  fractions,
-                               int                       circulationPumpPin)
+                               int                       circulationPumpPin,
+                               int                       temperaturePin)
 : touchPins_(touchPins),
   fractions_(fractions),
   circulationPumpPin_(circulationPumpPin),
@@ -25,6 +26,10 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
 {
   // Any global init-at-declaration from the sketch that isn't tied to hardware
   // can be placed here if needed.
+  if (temperaturePin >= 0) {
+      oneWirep_ = new OneWire(temperaturePin);
+      tempsens_.setOneWire(oneWirep_);
+  }
 }
 
 void SmartReservoir::begin() {
@@ -47,6 +52,12 @@ void SmartReservoir::begin() {
 
   Serial.begin(115200);
   Serial.println("Starting system initialization...");
+
+
+  if(oneWirep_) {
+      tempsens_.begin();
+      gLogger->println("Temperature sensor initialized");
+  }
 
   webLog.begin();
   setLogger(&webLog);
@@ -102,11 +113,20 @@ void SmartReservoir::begin() {
     1000   // interval
   );
 
+  //update temperature every 10 minutes
+  scheduler_.addTimedTask([this]() {
+      updateTemperature();
+    },
+    5*SECOND,  // first delay five seconds after start
+    true,  // repeat
+    10*MINUTE   // interval
+  );
+
   // Scheduler: send state every 10 seconds
   scheduler_.addTimedTask([this]() {
       sendState();
     },
-    10000, // first delay
+    10000, // first delay 10 seconds after start (this should be the last of the initial tasks to run)
     true,  // repeat
     10000  // interval
   );
@@ -167,15 +187,16 @@ void SmartReservoir::scheduleCirculationPump(){
         return;
     }
     // it is already ensured that the circulation period is at least as long as the time the pump is on during day or night
+    int runMin = circPumpSettings_.circTDay; 
+
+    if(timeManager_.isNightTime()) {
+        runMin = circPumpSettings_.circTNight;
+    }
+    periodMin -= runMin; // ensure period is time between end of one run and start of next
 
     //schedule
-    scheduler_.addTimedTask([this]() {
+    scheduler_.addTimedTask([this, runMin]() {
         // turn off after timeMS
-        int runMin = circPumpSettings_.circTDay; 
-
-        if(timeManager_.isNightTime()) {
-            runMin = circPumpSettings_.circTNight;
-        }
         if(runMin <= 0){
             turnOffCirculationPump(); // somewhat obsolete but safer
             scheduleCirculationPump(); // this is safe in the scheduler implementation!
@@ -207,11 +228,31 @@ void SmartReservoir::scheduleCirculationPump(){
         return;
     }
     int duty = map(circPumpSettings_.dutyCycle, 0, 100, 0, (1 << pwmRes_) - 1);
+    // change PWM frequency if needed
+    static int currentFreq = 5000;
+    if (currentFreq != circPumpSettings_.pwmFreq) {
+        ledcSetup(pwmChannel_, circPumpSettings_.pwmFreq, pwmRes_);
+        currentFreq = circPumpSettings_.pwmFreq;
+    }
     ledcWrite(pwmChannel_, duty);
+    // gLogger->println("Circulation pump turned ON with duty cycle " + String(circPumpSettings_.dutyCycle) + "%");
     
   }
   void SmartReservoir::turnOffCirculationPump(){
     if(circulationPumpPin_<0) 
        return;
     ledcWrite(pwmChannel_, 0);
+    // gLogger->println("Circulation pump turned OFF");
+  }
+
+  void SmartReservoir::updateTemperature() {
+      if (!oneWirep_) return; // No sensor configured
+
+      tempsens_.requestTemperatures(); // Send the command to get temperatures
+      float tempC = tempsens_.getTempCByIndex(0); // Get temperature in Celsius
+      if (tempC == DEVICE_DISCONNECTED_C) {
+          gLogger->println("Error: Could not read temperature data");
+          return;
+      }
+      fillState_.setTemperature(tempC);
   }

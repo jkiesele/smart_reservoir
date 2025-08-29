@@ -22,13 +22,22 @@
 #include <WebSettings.h>
 #include <Scheduler.h>
 #include <WebOTAUpload.h>
+#include <DallasTemperature.h>
 
 // The class that encapsulates your sketch behavior.
 class SmartReservoir {
 public:
   SmartReservoir(const std::vector<uint8_t>& touchPins,
                  const std::vector<float>&  fractions,
-                 int                       circulationPumpPin = -1);
+                 int                       circulationPumpPin = -1,
+                 int                       temperaturePin = -1);
+
+  ~SmartReservoir() {
+      if (oneWirep_) {
+          delete oneWirep_;
+          oneWirep_ = nullptr;
+      }
+  }
 
   // Replaces Arduino setup()
   void begin();
@@ -65,4 +74,8 @@ private:
   const uint8_t pwmRes_ = 8; //bits
 
   WebOTAUpload otaUpload_; // URL for OTA updates
+  // optional temp sensor
+  OneWire * oneWirep_ = nullptr;
+  DallasTemperature tempsens_;
+  void updateTemperature();
 };
