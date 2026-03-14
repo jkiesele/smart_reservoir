@@ -29,7 +29,7 @@ ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
     thresholds.ensureSize(touchPins.size());
     for (size_t i = 0; i < touchPins.size(); ++i) {
         uint8_t pin = touchPins[i];
-        touchSensors_.emplace_back(pin, thresholds[i], TOUCH_HYSTERESIS, TOUCH_SAMPLES);
+        touchSensors_.emplace_back(pin, thresholds[i], TOUCH_HYSTERESIS, TOUCH_SAMPLES, TOUCH_NMOVINGAVG);
     }
 }
 

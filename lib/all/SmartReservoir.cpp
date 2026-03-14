@@ -15,6 +15,7 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   // Construct fill state using ctor-exposed parameters and pointer to settings_
   fillState_(touchPins_, fractions_, &settings_),//after settings_ is constructed!
   fillStateDisplay_(&fillState_),
+  pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
   enc_(&secret::encryption_keys),
   tcpMessenger_(&enc_),
   led_(),
@@ -83,6 +84,11 @@ void SmartReservoir::begin() {
 
   webLog.mirrorToSerial = true;
 
+
+  // Add pump running display if circulation pump is used
+  if (circulationPumpPin_ >= 0) {
+      webInterface_.addDisplay("Pump Running", &pumpRunningDisplay_);
+  }
   // Add displays to the web interface
   for (const auto& display : fillStateDisplay_.getDisplays()) {
     webInterface_.addDisplay(display.first, display.second);
@@ -108,9 +114,9 @@ void SmartReservoir::begin() {
       fillState_.update();
       fillStateDisplay_.update();
     },
-    1000,  // first delay
+    250,  // first delay
     true,  // repeat
-    1000   // interval
+    250   // interval
   );
 
   //update temperature every 10 minutes
@@ -126,9 +132,9 @@ void SmartReservoir::begin() {
   scheduler_.addTimedTask([this]() {
       sendState();
     },
-    10000, // first delay 10 seconds after start (this should be the last of the initial tasks to run)
+    20000, // first delay 20 seconds after start (this should be the last of the initial tasks to run)
     true,  // repeat
-    10000  // interval
+    20000  // interval
   );
 
   if (circulationPumpPin_ >= 0) {
@@ -158,10 +164,11 @@ void SmartReservoir::loop() {
 void SmartReservoir::sendState() {
   if (((String)settings_.injUrl).length() > 0) {
     led_.setBlue(); // sending
+
     auto res = tcpMessenger_.sendToHost(
         fillState_, /*channel*/ 0, settings_.injUrl);
 
-    if (res != TCPMSG_OK) {
+    if (! (res == TCPMSG_OK || res == TCPMSG_QUEUED) ) {
       gLogger->println("Failed to send fill state: " + String(res));
       led_.setRed();
     } else {
@@ -177,27 +184,27 @@ void SmartReservoir::scheduleCirculationPump(){
     if(circulationPumpPin_<0) 
        return;
 
-    int periodMin = circPumpSettings_.circPDay;
+    int periodS = circPumpSettings_.circPDay;
     // if this is set to zero (at the moment), just schedule another check in 1 minute and return, don't run the pump
     // this allows to disable the pump from the web interface without changing the code
-    if (periodMin <= 0) {
+    if (periodS <= 0) {
         scheduler_.addTimedTask([this]() {
             scheduleCirculationPump();
         }, 1 * MINUTE, false); // don't repeat
         return;
     }
     // it is already ensured that the circulation period is at least as long as the time the pump is on during day or night
-    int runMin = circPumpSettings_.circTDay; 
+    int runS = circPumpSettings_.circTDay; 
 
     if(timeManager_.isNightTime()) {
-        runMin = circPumpSettings_.circTNight;
+        runS = circPumpSettings_.circTNight;
     }
-    periodMin -= runMin; // ensure period is time between end of one run and start of next
+    periodS -= runS; // ensure period is time between end of one run and start of next
 
     //schedule
-    scheduler_.addTimedTask([this, runMin]() {
+    scheduler_.addTimedTask([this, runS]() {
         // turn off after timeMS
-        if(runMin <= 0){
+        if(runS <= 0){
             turnOffCirculationPump(); // somewhat obsolete but safer
             scheduleCirculationPump(); // this is safe in the scheduler implementation!
             return;
@@ -210,11 +217,11 @@ void SmartReservoir::scheduleCirculationPump(){
             // the scheduler can deal with nested tasks and will run them in order
             scheduleCirculationPump();
         }, 
-        TimeManager::minToMs(runMin), 
+        runS * SECOND, 
         false); // do not repeat
 
     }, 
-    TimeManager::minToMs(periodMin), 
+    periodS * SECOND, 
     false); // don't repeat, self-reschedule
 
 }
@@ -236,12 +243,13 @@ void SmartReservoir::scheduleCirculationPump(){
     }
     ledcWrite(pwmChannel_, duty);
     // gLogger->println("Circulation pump turned ON with duty cycle " + String(circPumpSettings_.dutyCycle) + "%");
-    
+    pumpRunningDisplay_.update(true);
   }
   void SmartReservoir::turnOffCirculationPump(){
     if(circulationPumpPin_<0) 
        return;
     ledcWrite(pwmChannel_, 0);
+    pumpRunningDisplay_.update(false);
     // gLogger->println("Circulation pump turned OFF");
   }
 

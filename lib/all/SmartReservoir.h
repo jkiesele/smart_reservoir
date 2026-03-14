@@ -56,6 +56,7 @@ private:
   CirculationPumpSettings circPumpSettings_; // if hasCirculationPump_ is true
   ReservoirFillState  fillState_;          // depends on settings_ and ctor args
   FillStateDisplay    fillStateDisplay_;   // depends on fillState_
+  WebDisplay<bool>    pumpRunningDisplay_;
   EncryptionHandler   enc_;
   TCPMessenger        tcpMessenger_;
   DebugLED            led_;
