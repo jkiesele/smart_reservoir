@@ -27,12 +27,12 @@ class ReservoirFillState : public tcpmsg::formats::ReservoirInfo
 public:
     ReservoirFillState(const std::vector<uint8_t>& touchPins,
                        const std::vector<float>&  fractions,
-                        ReservoirSettings* settings);
+                        ReservoirSettings& settings);
 
     void begin();          ///< call from setup()
     void update();         ///< call periodically
 
-    const ReservoirSettings* settings() const { return settings_; }
+    const ReservoirSettings& settings() const { return settings_; }
 
     // setters
     const std::vector<TouchSensor>& getTouchPins() const { return touchSensors_; }
@@ -58,7 +58,7 @@ public:
 private:
     std::vector<TouchSensor>  touchSensors_;
     std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
-    ReservoirSettings* settings_;
+    ReservoirSettings& settings_;
     bool printedWarning_; ///< true if we printed a warning about sensor count
 };
 

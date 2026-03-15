@@ -12,7 +12,7 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   settings_(touchPins.size()), // pass number of pads to settings
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
-  fillState_(touchPins, fractions, &settings_),//after settings_ is constructed!
+  fillState_(touchPins, fractions, settings_),//after settings_ is constructed!
   fillStateDisplay_(&fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
   led_(),
@@ -132,9 +132,13 @@ void SmartReservoir::begin() {
 
   if (circulationPumpPin_ >= 0) {
     //init pwm for circulation pump if needed
-    ledcSetup(pwmChannel_, //channel
+    auto actual = ledcSetup(pwmChannel_, //channel
       circPumpSettings_.pwmFreq, //freq
       pwmRes_); //resolution bits
+    if (actual == 0) {
+        gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
+        ledcSetup(pwmChannel_, 1000, pwmRes_);
+    }
     ledcAttachPin(circulationPumpPin_, //pin
       pwmChannel_);//channel
     scheduleCirculationPump();
@@ -217,8 +221,10 @@ void SmartReservoir::scheduleCirculationPump(){
         if (actual == 0) {
             gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
             ledcSetup(pwmChannel_, 1000, pwmRes_);
+            currentFreq = 1000;
         }
-        currentFreq = circPumpSettings_.pwmFreq;
+        else{
+            currentFreq = circPumpSettings_.pwmFreq;}
     }
     ledcWrite(pwmChannel_, duty);
     // gLogger->println("Circulation pump turned ON with duty cycle " + String(circPumpSettings_.dutyCycle) + "%");
@@ -242,6 +248,7 @@ void SmartReservoir::scheduleCirculationPump(){
       float tempC = tempsens_.getTempCByIndex(0); // Get temperature in Celsius
       if (tempC == DEVICE_DISCONNECTED_C) {
           gLogger->println("Error: Could not read temperature data");
+          fillState_.setTemperature(-127.0f);
           return;
       }
       fillState_.setTemperature(tempC);

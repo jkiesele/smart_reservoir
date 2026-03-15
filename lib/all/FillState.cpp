@@ -5,7 +5,7 @@
 // ─────────────────────────────────── ReservoirFillState ─────────────────────────
 ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
                                           const std::vector<float>&  fractions,
-                                          ReservoirSettings* settings)
+                                          ReservoirSettings& settings)
 : fractions_(fractions),
   settings_(settings),
     printedWarning_(false) // Initialize warning flag
@@ -22,7 +22,7 @@ ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
     }
     // create touch sensors
     touchSensors_.reserve(touchPins.size());
-    auto& thresholds = settings_->thsTouch;
+    auto& thresholds = settings_.thsTouch;
 
     thresholds.ensureSize(touchPins.size());
     for (size_t i = 0; i < touchPins.size(); ++i) {
@@ -36,21 +36,21 @@ ReservoirFillState::ReservoirFillState(const std::vector<uint8_t>& touchPins,
 void ReservoirFillState::begin()
 {
     //iterate over touch sensors array and call begin on each 
-    for (uint8_t i = 0; i < touchSensors_.size(); ++i) {
+    for (size_t i = 0; i < touchSensors_.size(); ++i) {
         touchSensors_[i].begin();
     }
 }
 
 void ReservoirFillState::update()
 {
-    const auto& thresholds = settings_->thsTouch;
+    const auto& thresholds = settings_.thsTouch;
 
     //reset thresholds
     for (size_t i = 0; i < touchSensors_.size(); ++i) {
         if(i < thresholds.value.size()) {
             touchSensors_[i].setThreshold(thresholds[i]); // update threshold from settings
         } else {
-            gLogger->println("ReservoirFillState: WARNING: thresholds array size is smaller than sensor count, using default threshold for remaining sensors");
+            gLogger->println("ReservoirFillState: WARNING: thresholds array size is smaller than sensor count, setting remaining sensors inactive");
             touchSensors_[i].setThreshold(65535); // use max uint16 as fallback
         } 
     }
@@ -80,7 +80,7 @@ void ReservoirFillState::update()
     }
 
     // 4) bookkeeping
-    capacity_    = settings_->totalVolume;     // litres
+    capacity_    = settings_.totalVolume;     // litres
     // temperature_ updated externally through temp sensor
 
     bool allgood = true;
@@ -115,7 +115,7 @@ void ReservoirFillState::update()
 
 FillStateDisplay::FillStateDisplay(ReservoirFillState* fillState)
 : fillState_(fillState),
-  fillLevelDisplay_("Fill_Level", 1, fillState->settings()->totalVolume, " l")
+  fillLevelDisplay_("Fill_Level", 1, fillState->settings().totalVolume, " l")
 {
     auto N = fillState_->sensorCount();
     touchDisplays_.reserve(N);
