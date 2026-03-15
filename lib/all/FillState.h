@@ -52,7 +52,7 @@ public:
 
     // sensor access ------------------------------------------------------
     size_t            sensorCount()            const { return sensors_.size(); }
-    //uint32_t          rawRead(size_t idx)      const { return sensors_[idx].sensor.lastValue(); }
+    uint32_t          rawRead(size_t idx)      const { return sensors_[idx].sensor.lastValue(); }
     std::vector<uint32_t> rawReads()    const { 
         std::vector<uint32_t> reads;
         reads.reserve(sensors_.size());
@@ -79,7 +79,7 @@ private:
 class FillStateDisplay
 {
 public:
-    explicit FillStateDisplay(ReservoirFillState* fillState);
+    explicit FillStateDisplay(ReservoirFillState& fillState);
 
     void begin();   ///< optional (does nothing for now)
     void update();
@@ -88,7 +88,7 @@ public:
     std::vector<std::pair<String, WebDisplayBase*>> getDisplays();
 
 private:
-    ReservoirFillState*               fillState_;
+    ReservoirFillState&               fillState_;
     std::vector<WebDisplay<uint32_t>> touchDisplays_;
     WebBarDisplay<float>              fillLevelDisplay_;
 };

@@ -103,11 +103,11 @@ void ReservoirFillState::update()
 
 // ─────────────────────────────────── FillStateDisplay ───────────────────────────
 
-FillStateDisplay::FillStateDisplay(ReservoirFillState* fillState)
+FillStateDisplay::FillStateDisplay(ReservoirFillState& fillState)
 : fillState_(fillState),
-  fillLevelDisplay_("Fill_Level", 1, fillState->settings().totalVolume, " l")
+  fillLevelDisplay_("Fill_Level", 1, fillState.settings().totalVolume, " l")
 {
-    auto N = fillState_->sensorCount();
+    auto N = fillState.sensorCount();
     touchDisplays_.reserve(N);
     for (size_t i = 0; i < N; ++i) {
         touchDisplays_.emplace_back("Touch_" + String(i+1), 1, 0);
@@ -118,18 +118,17 @@ void FillStateDisplay::begin() { /* nothing yet */ }
 
 void FillStateDisplay::update()
 {
-    auto N = fillState_->sensorCount();
-    auto reads = fillState_->rawReads();
+    auto N = fillState_.sensorCount();
     //check N against reads size for safety
-    if(reads.size() != N) {
-        gLogger->println("FillStateDisplay: WARNING: sensor count and raw reads size mismatch");
+    if(touchDisplays_.size() != N) {
+        gLogger->println("FillStateDisplay: WARNING: sensor count and display count mismatch, skipping update");
         return;
     }
     for (size_t i = 0; i < N; ++i) {
-        touchDisplays_[i].update(reads[i]); //guaranteed to be in range cause of sensorCount
+        touchDisplays_[i].update(fillState_.rawRead(i)); //guaranteed to be in range cause of sensorCount
     }
-    fillLevelDisplay_.setMaxVal(fillState_->capacity());
-    fillLevelDisplay_.update(fillState_->litersFullMin());
+    fillLevelDisplay_.setMaxVal(fillState_.capacity());
+    fillLevelDisplay_.update(fillState_.litersFullMin());
 }
 
 std::vector<std::pair<String, WebDisplayBase*>>

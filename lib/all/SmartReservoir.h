@@ -26,6 +26,7 @@
 #include "FillSensorConfig.h"
 
 
+
 // The class that encapsulates your sketch behavior.
 class SmartReservoir {
 public:
@@ -70,6 +71,7 @@ private:
 
   const uint8_t pwmChannel_ = 0;
   const uint8_t pwmRes_ = 8; //bits
+  int currentFreq = 1000; // track current frequency to avoid unnecessary reconfigurations
 
   WebOTAUpload otaUpload_; // URL for OTA updates
   // optional temp sensor

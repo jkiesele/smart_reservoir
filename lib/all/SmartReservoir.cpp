@@ -12,7 +12,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
   fillState_(touchPinsAndFractions, settings_),//after settings_ is constructed!
-  fillStateDisplay_(&fillState_),
+  fillStateDisplay_(fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
   led_(),
   scheduler_(),
@@ -70,7 +70,7 @@ void SmartReservoir::begin() {
   setTimeProvider(&timeManager_);
   gLogger->println("Time manager initialized");
 
-  systemID.begin();
+  systemID.begin(); //does not hurt to call begin again if already called, and ensures systemID is ready for use
   gLogger->println("System ID initialized: " + systemID.systemName());
 
 
@@ -138,6 +138,7 @@ void SmartReservoir::begin() {
         gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
         ledcSetup(pwmChannel_, 1000, pwmRes_);
     }
+    currentFreq = circPumpSettings_.pwmFreq; // set it to the actual frequency to avoid unnecessary reconfigurations later
     ledcAttachPin(circulationPumpPin_, //pin
       pwmChannel_);//channel
     scheduleCirculationPump();
@@ -214,16 +215,13 @@ void SmartReservoir::scheduleCirculationPump(){
     }
     int duty = map(circPumpSettings_.dutyCycle, 0, 100, 0, (1 << pwmRes_) - 1);
     // change PWM frequency if needed
-    static int currentFreq = 5000;
     if (currentFreq != circPumpSettings_.pwmFreq) {
         auto actual = ledcSetup(pwmChannel_, circPumpSettings_.pwmFreq, pwmRes_);
         if (actual == 0) {
             gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
             ledcSetup(pwmChannel_, 1000, pwmRes_);
-            currentFreq = 1000;
         }
-        else{
-            currentFreq = circPumpSettings_.pwmFreq;}
+        currentFreq = circPumpSettings_.pwmFreq; //set it anyway so the warning gets printed only once and the code does no re-attempt to set an invalid frequency
     }
     ledcWrite(pwmChannel_, duty);
     // gLogger->println("Circulation pump turned ON with duty cycle " + String(circPumpSettings_.dutyCycle) + "%");

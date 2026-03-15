@@ -22,7 +22,7 @@ public:
         float prev = 0.0f;
         for (const auto& p : points_) {
             if (p.fraction <= 0.0f || p.fraction > 1.0f) return false;
-            if (p.fraction < prev) return false;
+            if (p.fraction <= prev) return false;
             prev = p.fraction;
         }
 

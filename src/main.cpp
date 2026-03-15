@@ -4,10 +4,13 @@
 
 
 #define IS_LETTUCE_TREE
+//#define IS_STRAWBERRY_NFT
 //#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
 //#define IS_CUCUMBER_RESERVOIR
-//#define IS_STRAWBERRY_NFT
+
+#define REWRITE_SYSTEM_NAME true // set to false after first flash to avoid overwriting system name and other settings
+#define REVISION "Rev 3.0a"
 
 #ifdef IS_LETTUCE_TREE
 // lettuce tree config, adjust pins and fractions as needed for your setup
@@ -17,6 +20,8 @@ FillSensorConfig config = {
     {6, 1.0f}  // top sensor at pin 6, 100% fill
 };
 uint8_t circulationPumpPin = 7; // circulation pump on pin 7
+const String systemName = "lettuce-tree";
+
 #elif defined(IS_MAIN_RESERVOIR)
 // main reservoir config (TBI)
 #elif defined(IS_TOMATO_RESERVOIR)
@@ -34,9 +39,14 @@ SmartReservoir reservoir(config, circulationPumpPin);
 
                          
 void setup() {
+
+  systemID.begin();
+  // Enforce compile-time hardware identity; will skip NVS write if unchanged.
+  systemID.setSystemName(systemName); 
+
   reservoir.begin();
   gLogger->print("Smart Reservoir System, software version: ");
-  gLogger->println("Rev 2.0k");
+  gLogger->println(REVISION);
 }
 
 void loop() {
