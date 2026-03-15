@@ -6,10 +6,23 @@
 #include <WebDisplay.h>
 #include <DataFormats.h>
 #include <TouchSensor.h>
+#include "FillSensorConfig.h"
 
 #define TOUCH_HYSTERESIS 200 // default hysteresis for touch sensors
 #define TOUCH_SAMPLES    10   // default number of samples for touch sensors
 #define TOUCH_NMOVINGAVG 5    // default number of samples for moving average
+
+
+
+//Helper
+struct FillSensorRuntime {
+    TouchSensor sensor;
+    float fraction = 0.0f;
+    FillSensorRuntime(uint8_t pin, float frac)
+        : sensor(pin, 0, TOUCH_HYSTERESIS, TOUCH_SAMPLES, TOUCH_NMOVINGAVG),
+          fraction(frac) {}
+};
+
 
 /**
  * ReservoirFillState
@@ -25,39 +38,32 @@
 class ReservoirFillState : public tcpmsg::formats::ReservoirInfo
 {
 public:
-    ReservoirFillState(const std::vector<uint8_t>& touchPins,
-                       const std::vector<float>&  fractions,
-                        ReservoirSettings& settings);
+    ReservoirFillState(const FillSensorConfig& config, ReservoirSettings& settings);
 
     void begin();          ///< call from setup()
     void update();         ///< call periodically
 
     const ReservoirSettings& settings() const { return settings_; }
 
-    // setters
-    const std::vector<TouchSensor>& getTouchPins() const { return touchSensors_; }
-    std::vector<TouchSensor>& getTouchPins() { return touchSensors_; }
-    void setFractions(const std::vector<float>& fractions) { fractions_ = fractions; }
 
     // convenience helpers  ----------------------------------------------
     bool  isEmpty()  const { return level_ < 5.0f; }
     bool  isFull()   const { return level_ >= 100.0f; }
 
     // sensor access ------------------------------------------------------
-    size_t            sensorCount()            const { return touchSensors_.size(); }
-    uint32_t          rawRead(size_t idx)      const { return touchSensors_[idx].lastValue(); }
+    size_t            sensorCount()            const { return sensors_.size(); }
+    //uint32_t          rawRead(size_t idx)      const { return sensors_[idx].sensor.lastValue(); }
     std::vector<uint32_t> rawReads()    const { 
         std::vector<uint32_t> reads;
-        reads.reserve(touchSensors_.size());
-        for (size_t i = 0; i < touchSensors_.size(); ++i) {
-            reads.push_back(touchSensors_[i].lastValue());
+        reads.reserve(sensors_.size());
+        for (size_t i = 0; i < sensors_.size(); ++i) {
+            reads.push_back(sensors_[i].sensor.lastValue());
         }
         return reads;
     }
 
 private:
-    std::vector<TouchSensor>  touchSensors_;
-    std::vector<float>    fractions_;   ///< same size as touchPins_, ascending
+    std::vector<FillSensorRuntime>  sensors_;
     ReservoirSettings& settings_;
     bool printedWarning_; ///< true if we printed a warning about sensor count
 };

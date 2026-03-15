@@ -1,21 +1,36 @@
 #include <Arduino.h>
 #include <SmartReservoir.h>
+#include "FillSensorConfig.h"
 
 
-// If your build system prefers no dynamic initialization of std::vector, you can
-// replace with std::array and construct vectors from them in setup.
+#define IS_LETTUCE_TREE
+//#define IS_MAIN_RESERVOIR
+//#define IS_TOMATO_RESERVOIR
+//#define IS_CUCUMBER_RESERVOIR
+//#define IS_STRAWBERRY_NFT
 
-
-
-//
-
-#if CONFIG_IDF_TARGET_ESP32S2
-//this is the lettuce tree on an ESP32-S2
-SmartReservoir reservoir(/*TOUCH_PINS*/ {4, 5, 6},  /*FRACTIONS*/  {0.3f, 0.6f, 1.0f}, 7); // circulation pump on pin 8
+#ifdef IS_LETTUCE_TREE
+// lettuce tree config, adjust pins and fractions as needed for your setup
+FillSensorConfig config = {
+    {4, 0.3f}, // bottom sensor at pin 4, 30% fill
+    {5, 0.6f}, // middle sensor at pin 5, 60% fill
+    {6, 1.0f}  // top sensor at pin 6, 100% fill
+};
+uint8_t circulationPumpPin = 7; // circulation pump on pin 7
+#elif defined(IS_MAIN_RESERVOIR)
+// main reservoir config (TBI)
+#elif defined(IS_TOMATO_RESERVOIR)
+// tomato reservoir config (TBI)
+#elif defined(IS_CUCUMBER_RESERVOIR)
+// cucumber reservoir config (TBI)
+#elif defined(IS_STRAWBERRY_NFT)
+// strawberry NFT config (TBI)
 #else
-//this is the tomato reservoir on an ESP32-S3
-SmartReservoir reservoir(/*TOUCH_PINS*/ {3, 4, 5, 6},  /*FRACTIONS*/  {0.1f, 0.5f, 0.73f, 1.0f}, -1); // no circulation pump
+#error "Please define a reservoir configuration (e.g. IS_LETTUCE_TREE) and adjust the FillSensorConfig and circulationPumpPin accordingly."
 #endif
+
+
+SmartReservoir reservoir(config, circulationPumpPin);
 
                          
 void setup() {

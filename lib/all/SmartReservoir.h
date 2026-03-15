@@ -23,12 +23,13 @@
 #include <WebOTAUpload.h>
 #include <DallasTemperature.h>
 #include "ReservoirReporter.h"
+#include "FillSensorConfig.h"
+
 
 // The class that encapsulates your sketch behavior.
 class SmartReservoir {
 public:
-  SmartReservoir(const std::vector<uint8_t>& touchPins,
-                 const std::vector<float>&  fractions,
+  SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
                  int                       circulationPumpPin = -1,
                  int                       temperaturePin = -1);
 

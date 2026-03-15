@@ -3,16 +3,15 @@
 // NOTE: webLog, gLogger, systemID, setLogger, setTimeProvider are assumed
 // to be provided by the included project headers (as in your original sketch).
 
-SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
-                               const std::vector<float>&  fractions,
+SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
                                int                       circulationPumpPin,
                                int                       temperaturePin)
 : 
   circulationPumpPin_(circulationPumpPin),
-  settings_(touchPins.size()), // pass number of pads to settings
+  settings_(touchPinsAndFractions.points().size()), // pass number of pads to settings
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
-  fillState_(touchPins, fractions, settings_),//after settings_ is constructed!
+  fillState_(touchPinsAndFractions, settings_),//after settings_ is constructed!
   fillStateDisplay_(&fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
   led_(),
@@ -28,10 +27,6 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   if (temperaturePin >= 0) {
       oneWirep_ = new OneWire(temperaturePin);
       tempsens_.setOneWire(oneWirep_);
-  }
-  //check arrays sizes to match
-  if (touchPins.size() != fractions.size()) {
-      gLogger->println("SmartReservoir ctor: ERROR: touchPins and fractions arrays differ in length!");
   }
 }
 
@@ -101,6 +96,10 @@ void SmartReservoir::begin() {
 
   gLogger->println("Touch sensors initialized");
 
+  //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
+  fillState_.update();
+  fillStateDisplay_.update();
+  updateTemperature();
   
   ReservoirReporter::Config reporterConfig;
   reporterConfig.heartbeatIntervalMs = 60000; // 1 minute
