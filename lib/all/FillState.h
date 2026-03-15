@@ -1,11 +1,10 @@
-#ifndef FILLSTATE_H
-#define FILLSTATE_H
+#pragma once
 
 #include <Arduino.h>
 #include <vector>
 #include <ReservoirSettings.h>
 #include <WebDisplay.h>
-#include <SharedDataFormats.h>
+#include <DataFormats.h>
 #include <TouchSensor.h>
 
 #define TOUCH_HYSTERESIS 200 // default hysteresis for touch sensors
@@ -23,7 +22,7 @@
  *                        The top sensor should be 1.0; others < 1.0.
  *  • touchThreshold    — raw ADC threshold used for ALL sensors
  */
-class ReservoirFillState : public SharedDataFormats::ReservoirInfo
+class ReservoirFillState : public tcpmsg::formats::ReservoirInfo
 {
 public:
     ReservoirFillState(const std::vector<uint8_t>& touchPins,
@@ -50,8 +49,8 @@ public:
     std::vector<uint32_t> rawReads()    const { 
         std::vector<uint32_t> reads;
         reads.reserve(touchSensors_.size());
-        for (const auto& ts : touchSensors_) {
-            reads.push_back(ts.lastValue());
+        for (size_t i = 0; i < touchSensors_.size(); ++i) {
+            reads.push_back(touchSensors_[i].lastValue());
         }
         return reads;
     }
@@ -70,6 +69,7 @@ private:
  * and for the calculated fill level.  It builds everything dynamically
  * from the sensor count.
  */
+
 class FillStateDisplay
 {
 public:
@@ -87,4 +87,5 @@ private:
     WebBarDisplay<float>              fillLevelDisplay_;
 };
 
-#endif // FILLSTATE_H
+
+

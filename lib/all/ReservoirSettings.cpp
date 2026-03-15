@@ -3,6 +3,24 @@
 
 //ReservoirSettings settings;
 
+bool ReservoirSettings::sanityCheck() {
+    bool ok = true;
+
+    if (tcpPort <= 0 || tcpPort > 65535) {
+        gLogger->println("ReservoirSettings: tcpPort out of range, resetting to default");
+        tcpPort = 12345;
+        ok = false;
+    }
+
+    if (channelID < 0 || channelID > 255) {
+        gLogger->println("ReservoirSettings: channelID out of range, resetting to default");
+        channelID = 0;
+        ok = false;
+    }
+
+    return ok;
+}
+
 bool CirculationPumpSettings::sanityCheck() {
 
     bool ret = true;
@@ -10,11 +28,6 @@ bool CirculationPumpSettings::sanityCheck() {
     if (minLevel < 0) {
         gLogger->println("CirculationPumpSettings: minLevel < 0");
         minLevel=0;
-        ret = false;
-    }
-    if (minLevel   < 0){
-        gLogger->println("CirculationPumpSettings: minLevel < 0");
-        minLevel = 0;
         ret = false;
     }
     if (circPDay   < 0) {
@@ -50,6 +63,16 @@ bool CirculationPumpSettings::sanityCheck() {
     if(dutyCycle > 100) {
         gLogger->println("CirculationPumpSettings: dutyCycle > 100");
         dutyCycle = 100;
+        ret = false;
+    }
+    if (pwmFreq < 1) {
+        gLogger->println("CirculationPumpSettings: pwmFreq < 1");
+        pwmFreq = 1000;
+        ret = false;
+    }
+    if (pwmFreq > 20000) {
+        gLogger->println("CirculationPumpSettings: pwmFreq too high");
+        pwmFreq = 20000;
         ret = false;
     }
     return ret;

@@ -11,18 +11,18 @@
 #include <ReservoirSettings.h>
 #include <WiFiWrapper.h>
 #include <passwords.h>
-#include <loggingBase.h>
+#include <LoggingBase.h>
 #include <TimeProviderBase.h>
 #include <WebLog.h>
 #include <TimeManager.h>
 #include <FillState.h>
 #include <DebugLED.h>
-#include <TCPMessenger.h>
 #include <EncryptionHandler.h>
 #include <WebSettings.h>
 #include <Scheduler.h>
 #include <WebOTAUpload.h>
 #include <DallasTemperature.h>
+#include "ReservoirReporter.h"
 
 // The class that encapsulates your sketch behavior.
 class SmartReservoir {
@@ -47,8 +47,6 @@ public:
 
 private:
   // ---- Configuration copied from ctor args
-  std::vector<uint8_t> touchPins_;
-  std::vector<float>   fractions_;
   int                 circulationPumpPin_{-1};
 
   // ---- Former globals (now members)
@@ -57,16 +55,14 @@ private:
   ReservoirFillState  fillState_;          // depends on settings_ and ctor args
   FillStateDisplay    fillStateDisplay_;   // depends on fillState_
   WebDisplay<bool>    pumpRunningDisplay_;
-  EncryptionHandler   enc_;
-  TCPMessenger        tcpMessenger_;
   DebugLED            led_;
   Scheduler           scheduler_;
   TimeManager         timeManager_;
   WiFiWrapper         wifi_;               // constructed with secrets
-  BasicWebInterface        webInterface_;
+  BasicWebInterface   webInterface_;
+  ReservoirReporter   reporter_;
 
   // ---- Helpers (former free functions)
-  void sendState();
   void scheduleCirculationPump();
   void safeTurnOnCirculationPump();
   void turnOffCirculationPump();

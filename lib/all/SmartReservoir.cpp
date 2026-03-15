@@ -7,22 +7,20 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
                                const std::vector<float>&  fractions,
                                int                       circulationPumpPin,
                                int                       temperaturePin)
-: touchPins_(touchPins),
-  fractions_(fractions),
+: 
   circulationPumpPin_(circulationPumpPin),
   settings_(touchPins.size()), // pass number of pads to settings
   circPumpSettings_(), 
   // Construct fill state using ctor-exposed parameters and pointer to settings_
-  fillState_(touchPins_, fractions_, &settings_),//after settings_ is constructed!
+  fillState_(touchPins, fractions, &settings_),//after settings_ is constructed!
   fillStateDisplay_(&fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
-  enc_(&secret::encryption_keys),
-  tcpMessenger_(&enc_),
   led_(),
   scheduler_(),
   timeManager_(),
   wifi_(secret::ssid, secret::password),
   webInterface_(),
+  reporter_(fillState_, settings_),
   otaUpload_(secret::otaPassword)
 {
   // Any global init-at-declaration from the sketch that isn't tied to hardware
@@ -30,6 +28,10 @@ SmartReservoir::SmartReservoir(const std::vector<uint8_t>& touchPins,
   if (temperaturePin >= 0) {
       oneWirep_ = new OneWire(temperaturePin);
       tempsens_.setOneWire(oneWirep_);
+  }
+  //check arrays sizes to match
+  if (touchPins.size() != fractions.size()) {
+      gLogger->println("SmartReservoir ctor: ERROR: touchPins and fractions arrays differ in length!");
   }
 }
 
@@ -42,8 +44,14 @@ void SmartReservoir::begin() {
   led_.begin();
   led_.setRed();
 
-  fillState_.begin();
+  Serial.begin(115200);
+  Serial.println("Starting system initialization...");
+  webLog.begin();
+  setLogger(&webLog);
+  webLog.mirrorToSerial = true;
+
   settings_.begin();
+  fillState_.begin();
   if(circulationPumpPin_>=0) {
     circPumpSettings_.begin();
     //set up output GPIO
@@ -51,8 +59,6 @@ void SmartReservoir::begin() {
     digitalWrite(circulationPumpPin_, LOW); // ensure pump is off initially
   }
 
-  Serial.begin(115200);
-  Serial.println("Starting system initialization...");
 
 
   if(oneWirep_) {
@@ -60,29 +66,18 @@ void SmartReservoir::begin() {
       gLogger->println("Temperature sensor initialized");
   }
 
-  webLog.begin();
-  setLogger(&webLog);
 
   gLogger->println("Starting WiFi connection...");
   wifi_.begin();
   delay(1000);
-  while (!wifi_.isStateReady()) {
-    gLogger->println("Waiting for WiFi to be ready...");
-    delay(1000);
-  }
 
   timeManager_.begin();
-  while (!timeManager_.isSynced()) {
-    gLogger->println("Waiting for time synchronization...");
-    delay(1000);
-  }
   setTimeProvider(&timeManager_);
   gLogger->println("Time manager initialized");
 
   systemID.begin();
   gLogger->println("System ID initialized: " + systemID.systemName());
 
-  webLog.mirrorToSerial = true;
 
 
   // Add pump running display if circulation pump is used
@@ -106,8 +101,14 @@ void SmartReservoir::begin() {
 
   gLogger->println("Touch sensors initialized");
 
-  tcpMessenger_.beginServer(); // Starts TCP server (as before)
-  gLogger->println("TCP Messenger server started on port 12345");
+  
+  ReservoirReporter::Config reporterConfig;
+  reporterConfig.heartbeatIntervalMs = 60000; // 1 minute
+  reporterConfig.minAttemptIntervalMs = 1000; // 1 second
+  if(reporter_.begin(reporterConfig))
+      gLogger->println("Reporter started");
+  else
+      gLogger->println("Failed to start reporter");
 
   // Scheduler: update fill state every second
   scheduler_.addTimedTask([this]() {
@@ -128,25 +129,16 @@ void SmartReservoir::begin() {
     10*MINUTE   // interval
   );
 
-  // Scheduler: send state every 10 seconds
-  scheduler_.addTimedTask([this]() {
-      sendState();
-    },
-    20000, // first delay 20 seconds after start (this should be the last of the initial tasks to run)
-    true,  // repeat
-    20000  // interval
-  );
 
   if (circulationPumpPin_ >= 0) {
+    //init pwm for circulation pump if needed
+    ledcSetup(pwmChannel_, //channel
+      circPumpSettings_.pwmFreq, //freq
+      pwmRes_); //resolution bits
+    ledcAttachPin(circulationPumpPin_, //pin
+      pwmChannel_);//channel
     scheduleCirculationPump();
   }
-
-  //init pwm for circulation pump if needed
-  ledcSetup(pwmChannel_, //channel
-    5000, //freq
-    pwmRes_); //resolution bits
-  ledcAttachPin(circulationPumpPin_, //pin
-    pwmChannel_);//channel
 
   led_.setGreen();
   delay(1000);
@@ -159,26 +151,9 @@ void SmartReservoir::loop() {
   wifi_.loop();
   scheduler_.loop();
   webInterface_.loop();
+  reporter_.loop();
 }
 
-void SmartReservoir::sendState() {
-  if (((String)settings_.injUrl).length() > 0) {
-    led_.setBlue(); // sending
-
-    auto res = tcpMessenger_.sendToHost(
-        fillState_, /*channel*/ 0, settings_.injUrl);
-
-    if (! (res == TCPMSG_OK || res == TCPMSG_QUEUED) ) {
-      gLogger->println("Failed to send fill state: " + String(res));
-      led_.setRed();
-    } else {
-      led_.setOff(); // success (same behavior as original)
-    }
-  } else {
-    // No URL set → purple
-    led_.setColor(10, 0, 10);
-  }
-}
 
 void SmartReservoir::scheduleCirculationPump(){
     if(circulationPumpPin_<0) 
@@ -238,7 +213,11 @@ void SmartReservoir::scheduleCirculationPump(){
     // change PWM frequency if needed
     static int currentFreq = 5000;
     if (currentFreq != circPumpSettings_.pwmFreq) {
-        ledcSetup(pwmChannel_, circPumpSettings_.pwmFreq, pwmRes_);
+        auto actual = ledcSetup(pwmChannel_, circPumpSettings_.pwmFreq, pwmRes_);
+        if (actual == 0) {
+            gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
+            ledcSetup(pwmChannel_, 1000, pwmRes_);
+        }
         currentFreq = circPumpSettings_.pwmFreq;
     }
     ledcWrite(pwmChannel_, duty);
@@ -254,7 +233,10 @@ void SmartReservoir::scheduleCirculationPump(){
   }
 
   void SmartReservoir::updateTemperature() {
-      if (!oneWirep_) return; // No sensor configured
+      if (!oneWirep_){
+        fillState_.setTemperature(-127.0f); // set to a default error value if no sensor
+        return; // No sensor configured
+      }
 
       tempsens_.requestTemperatures(); // Send the command to get temperatures
       float tempC = tempsens_.getTempCByIndex(0); // Get temperature in Celsius
