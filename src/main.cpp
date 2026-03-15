@@ -3,7 +3,8 @@
 #include "FillSensorConfig.h"
 
 
-#define IS_LETTUCE_TREE
+#define IS_TEST_RESERVOIR
+//#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
 //#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
@@ -12,7 +13,19 @@
 #define REWRITE_SYSTEM_NAME true // set to false after first flash to avoid overwriting system name and other settings
 #define REVISION "Rev 3.0a"
 
-#ifdef IS_LETTUCE_TREE
+#ifdef IS_TEST_RESERVOIR
+// test reservoir config, adjust pins and fractions as needed for your setup
+FillSensorConfig config = {
+    {4, 0.25f}, // bottom sensor at pin 4,
+    {5, 0.5f},  // middle sensor at pin 5,
+    {6, 0.75f}, // upper-middle sensor at pin 6,
+    {7, 1.0f}   // top sensor at pin 7,
+};
+//no circulation pump for test reservoir
+int8_t circulationPumpPin = -1; // set to -1 if no pump
+const String systemName = "test-reservoir";
+
+#elif defined(IS_LETTUCE_TREE)
 // lettuce tree config, adjust pins and fractions as needed for your setup
 FillSensorConfig config = {
     {4, 0.3f}, // bottom sensor at pin 4, 30% fill

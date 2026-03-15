@@ -68,6 +68,14 @@ void ReservoirReporter::loop() {
         return;
     }
     // settings are sanity checked so can be used directly here
+    if(REPORTER_VERBOSE_LOGGING) {
+        gLogger->print("Reporter: Sending update: level=" + String(current.level()) +
+                         "%, emptyLevel=" + String(current.emptyLevel()) +
+                         "%, capacity=" + String(current.capacity()) +
+                         "L, temp=" + String(current.temperature()) + "C\n");
+        gLogger->println("to " + settings_.injIP.toString() + ":" + String(settings_.tcpPort) +
+                         " chanId=" + String(settings_.channelID));
+    }
 
     const auto rc = messenger_.sendToIP(current,
                                         settings_.channelID, // this can change in the web settings so read it here

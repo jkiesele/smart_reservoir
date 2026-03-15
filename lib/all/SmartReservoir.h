@@ -25,6 +25,7 @@
 #include "ReservoirReporter.h"
 #include "FillSensorConfig.h"
 #include <memory> // for std::unique_ptr
+#include "WebButton.h"//for force send
 
 
 
@@ -53,12 +54,18 @@ private:
   ReservoirFillState  fillState_;          // depends on settings_ and ctor args
   FillStateDisplay    fillStateDisplay_;   // depends on fillState_
   WebDisplay<bool>    pumpRunningDisplay_;
+  WebButton           forceSendButton_; // 2s update interval, initial false
   DebugLED            led_;
   Scheduler           scheduler_;
   TimeManager         timeManager_;
   WiFiWrapper         wifi_;               // constructed with secrets
   BasicWebInterface   webInterface_;
   ReservoirReporter   reporter_;
+
+  // -- for button
+  void onForceSendButtonClick() {
+    reporter_.enableImmediateSend();
+  }
 
   // ---- Helpers (former free functions)
   void scheduleCirculationPump();

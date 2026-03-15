@@ -14,6 +14,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   fillState_(touchPinsAndFractions, settings_),//after settings_ is constructed!
   fillStateDisplay_(fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
+  forceSendButton_("fSend", "Force Send", [this]() { onForceSendButtonClick(); }, 2), // callback for button click
   led_(),
   scheduler_(),
   timeManager_(),
@@ -86,6 +87,8 @@ void SmartReservoir::begin() {
   for (const auto& display : fillStateDisplay_.getDisplays()) {
     webInterface_.addDisplay(display.first, display.second);
   }
+  // Add force send button to web interface
+  webInterface_.addDisplay("Force Send",&forceSendButton_);
   // Add settings display
   webInterface_.addSettings("Reservoir Settings", &settings_);
   if (circulationPumpPin_>=0) {
