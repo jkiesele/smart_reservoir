@@ -24,6 +24,7 @@
 #include <DallasTemperature.h>
 #include "ReservoirReporter.h"
 #include "FillSensorConfig.h"
+#include <memory> // for std::unique_ptr
 
 
 
@@ -34,12 +35,7 @@ public:
                  int                       circulationPumpPin = -1,
                  int                       temperaturePin = -1);
 
-  ~SmartReservoir() {
-      if (oneWirep_) {
-          delete oneWirep_;
-          oneWirep_ = nullptr;
-      }
-  }
+  ~SmartReservoir() {}
 
   // Replaces Arduino setup()
   void begin();
@@ -75,7 +71,7 @@ private:
 
   WebOTAUpload otaUpload_; // URL for OTA updates
   // optional temp sensor
-  OneWire * oneWirep_ = nullptr;
+  std::unique_ptr<OneWire> oneWirep_;
   DallasTemperature tempsens_;
   void updateTemperature();
 };

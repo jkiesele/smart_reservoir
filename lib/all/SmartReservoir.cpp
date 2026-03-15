@@ -25,8 +25,11 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   // Any global init-at-declaration from the sketch that isn't tied to hardware
   // can be placed here if needed.
   if (temperaturePin >= 0) {
-      oneWirep_ = new OneWire(temperaturePin);
-      tempsens_.setOneWire(oneWirep_);
+      oneWirep_ = std::unique_ptr<OneWire>(new OneWire(temperaturePin));
+      tempsens_.setOneWire(oneWirep_.get());
+  }
+  else{
+      oneWirep_.reset(); //does nothing, just for clarity
   }
 }
 
@@ -139,8 +142,7 @@ void SmartReservoir::begin() {
         ledcSetup(pwmChannel_, 1000, pwmRes_);
     }
     currentFreq = circPumpSettings_.pwmFreq; // set it to the actual frequency to avoid unnecessary reconfigurations later
-    ledcAttachPin(circulationPumpPin_, //pin
-      pwmChannel_);//channel
+    ledcAttachPin(circulationPumpPin_,pwmChannel_);
     scheduleCirculationPump();
   }
 
