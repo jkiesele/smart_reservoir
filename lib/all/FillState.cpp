@@ -135,10 +135,10 @@ std::vector<std::pair<String, WebDisplayBase*>>
 FillStateDisplay::getDisplays()
 {
     std::vector<std::pair<String, WebDisplayBase*>> out;
+    out.emplace_back("Fill Level (min)", &fillLevelDisplay_);
     for (size_t i = 0; i < touchDisplays_.size(); ++i) {
         out.emplace_back("Touch " + String(i+1) + " ADC value",
                          &touchDisplays_[i]);
     }
-    out.emplace_back("Fill Level (min)", &fillLevelDisplay_);
     return out;
 }

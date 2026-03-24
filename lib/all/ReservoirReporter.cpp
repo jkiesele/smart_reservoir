@@ -67,6 +67,9 @@ void ReservoirReporter::loop() {
     if (!shouldSend) {
         return;
     }
+    if(!settings_.sendActive) {
+        return;
+    }
     // settings are sanity checked so can be used directly here
     if(REPORTER_VERBOSE_LOGGING) {
         gLogger->print("Reporter: Sending update: level=" + String(current.level()) +

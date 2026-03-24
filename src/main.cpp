@@ -3,10 +3,10 @@
 #include "FillSensorConfig.h"
 
 
-#define IS_TEST_RESERVOIR
+//#define IS_TEST_RESERVOIR
 //#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
-//#define IS_MAIN_RESERVOIR
+#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
 //#define IS_CUCUMBER_RESERVOIR
 
@@ -36,9 +36,30 @@ uint8_t circulationPumpPin = 7; // circulation pump on pin 7
 const String systemName = "lettuce-tree";
 
 #elif defined(IS_MAIN_RESERVOIR)
+FillSensorConfig config = {
+    {1, 0.125f},
+    {2, 0.25f},
+    {3, 0.375f},
+    {4, 0.5f},
+    {5, 0.625f},
+    {6, 0.75f},
+    {7, 0.875f},
+    {8, 1.0f}
+};
+int circulationPumpPin = -1; // no circulation pump for main reservoir
+const String systemName = "main-reservoir";
 // main reservoir config (TBI)
 #elif defined(IS_TOMATO_RESERVOIR)
-// tomato reservoir config (TBI)
+// tomato reservoir config, adjust pins and fractions as needed for your setup
+FillSensorConfig config = {
+    {3, 0.1f}, // bottom sensor at pin 4, 25% fill
+    {4, 0.5f},  // middle sensor at pin 5, 50% fill
+    {5, 0.75f}, // upper-middle sensor at pin 6, 75% fill
+    {6, 1.0f}   // top sensor at pin 7, 100% fill
+};
+int circulationPumpPin = -1; // circulation pump on pin 8
+const String systemName = "tomato-reservoir";
+
 #elif defined(IS_CUCUMBER_RESERVOIR)
 // cucumber reservoir config (TBI)
 #elif defined(IS_STRAWBERRY_NFT)
@@ -52,6 +73,7 @@ SmartReservoir reservoir(config, circulationPumpPin);
 
                          
 void setup() {
+  delay(1000); // allow time for psu to stabilise
 
   systemID.begin();
   // Enforce compile-time hardware identity; will skip NVS write if unchanged.

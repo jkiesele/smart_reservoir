@@ -22,6 +22,7 @@ class ReservoirSettings : public SettingsBlockBase {
     //own channel ID as int
     DEF_SETTING(int, channelID, "Channel ID", 1, 1);
     DEF_SETTING(int, tcpPort, "TCP Port (in and out, 0-65535, out only affected after restart)", 12345, 1);
+    DEF_SETTING(bool, sendActive, "Send reports to injector", false, 0);
 
     bool sanityCheck() override;
 
