@@ -54,6 +54,7 @@ private:
   ReservoirFillState  fillState_;          // depends on settings_ and ctor args
   FillStateDisplay    fillStateDisplay_;   // depends on fillState_
   WebDisplay<bool>    pumpRunningDisplay_;
+  WebDisplay<float>   temperatureDisplay_; // updates every 60s, initial 0.0
   WebButton           forceSendButton_; // 2s update interval, initial false
   DebugLED            led_;
   Scheduler           scheduler_;

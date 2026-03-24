@@ -14,6 +14,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   fillState_(touchPinsAndFractions, settings_),//after settings_ is constructed!
   fillStateDisplay_(fillState_),
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
+  temperatureDisplay_("temperature", 60, 0.0f), // updates every 60s, initial 0.0
   forceSendButton_("fSend", "Force Send", [this]() { onForceSendButtonClick(); }, 2), // callback for button click
   led_(),
   scheduler_(),
@@ -83,6 +84,9 @@ void SmartReservoir::begin() {
   if (circulationPumpPin_ >= 0) {
       webInterface_.addDisplay("Pump Running", &pumpRunningDisplay_);
   }
+  if (oneWirep_) {
+      webInterface_.addDisplay("Temperature [˚C]", &temperatureDisplay_);
+  }
   // Add displays to the web interface
   for (const auto& display : fillStateDisplay_.getDisplays()) {
     webInterface_.addDisplay(display.first, display.second);
@@ -128,6 +132,7 @@ void SmartReservoir::begin() {
   //update temperature every 10 minutes
   scheduler_.addTimedTask([this]() {
       updateTemperature();
+      temperatureDisplay_.update(fillState_.temperature());
     },
     5*SECOND,  // first delay five seconds after start
     true,  // repeat
