@@ -11,7 +11,7 @@
 //#define IS_CUCUMBER_RESERVOIR
 
 #define REWRITE_SYSTEM_NAME true // set to false after first flash to avoid overwriting system name and other settings
-#define REVISION "Rev 3.0a"
+#define REVISION "Rev 3.0b"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup
@@ -33,6 +33,7 @@ FillSensorConfig config = {
     {6, 1.0f}  // top sensor at pin 6, 100% fill
 };
 uint8_t circulationPumpPin = 7; // circulation pump on pin 7
+int temperaturePin = -1; // optional temperature sensor on pin 9
 const String systemName = "lettuce-tree";
 
 #elif defined(IS_MAIN_RESERVOIR)
@@ -47,6 +48,7 @@ FillSensorConfig config = {
     {8, 1.0f}
 };
 int circulationPumpPin = -1; // no circulation pump for main reservoir
+int temperaturePin = 13; // optional temperature sensor on pin 9
 const String systemName = "main-reservoir";
 // main reservoir config (TBI)
 #elif defined(IS_TOMATO_RESERVOIR)
@@ -58,6 +60,7 @@ FillSensorConfig config = {
     {6, 1.0f}   // top sensor at pin 7, 100% fill
 };
 int circulationPumpPin = -1; // circulation pump on pin 8
+int temperaturePin = -1; // optional temperature sensor on pin 2
 const String systemName = "tomato-reservoir";
 
 #elif defined(IS_CUCUMBER_RESERVOIR)
@@ -69,7 +72,7 @@ const String systemName = "tomato-reservoir";
 #endif
 
 
-SmartReservoir reservoir(config, circulationPumpPin);
+SmartReservoir reservoir(config, circulationPumpPin, temperaturePin);
 
                          
 void setup() {

@@ -50,6 +50,9 @@ void SmartReservoir::begin() {
   setLogger(&webLog);
   webLog.mirrorToSerial = true;
 
+  if(oneWirep_)
+      tempsens_.begin();
+
   settings_.begin();
   fillState_.begin();
   if(circulationPumpPin_>=0) {
