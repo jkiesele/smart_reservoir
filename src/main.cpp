@@ -4,9 +4,9 @@
 
 
 //#define IS_TEST_RESERVOIR
-//#define IS_LETTUCE_TREE
+#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
-#define IS_MAIN_RESERVOIR
+//#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
 //#define IS_CUCUMBER_RESERVOIR
 
@@ -28,11 +28,13 @@ const String systemName = "test-reservoir";
 #elif defined(IS_LETTUCE_TREE)
 // lettuce tree config, adjust pins and fractions as needed for your setup
 FillSensorConfig config = {
-    {4, 0.3f}, // bottom sensor at pin 4, 30% fill
-    {5, 0.6f}, // middle sensor at pin 5, 60% fill
-    {6, 1.0f}  // top sensor at pin 6, 100% fill
+    {1, 0.2f}, // 
+    {2, 0.25f}, //
+    {3, 0.5f},  // 
+    {4, 0.75f}, //
+    {5, 1.0f}   //
 };
-uint8_t circulationPumpPin = 7; // circulation pump on pin 7
+uint8_t circulationPumpPin = 18; // circulation pump on pin 7
 int temperaturePin = -1; // optional temperature sensor on pin 9
 const String systemName = "lettuce-tree";
 

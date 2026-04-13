@@ -9,8 +9,8 @@
 #include "FillSensorConfig.h"
 
 #define TOUCH_HYSTERESIS 200 // default hysteresis for touch sensors
-#define TOUCH_SAMPLES    10   // default number of samples for touch sensors
-#define TOUCH_NMOVINGAVG 5    // default number of samples for moving average
+#define TOUCH_SAMPLES    3   // default number of samples for touch sensors
+#define TOUCH_NMOVINGAVG 0    // default number of samples for moving average
 
 
 

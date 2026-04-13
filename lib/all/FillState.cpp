@@ -137,7 +137,9 @@ FillStateDisplay::getDisplays()
     std::vector<std::pair<String, WebDisplayBase*>> out;
     out.emplace_back("Fill Level (min)", &fillLevelDisplay_);
     for (size_t i = 0; i < touchDisplays_.size(); ++i) {
-        out.emplace_back("Touch " + String(i+1) + " ADC value",
+        String sensstr = "Touch ADCs";
+        if(i) sensstr = ""; // only label the first one to avoid clutter
+        out.emplace_back(sensstr,
                          &touchDisplays_[i]);
     }
     return out;

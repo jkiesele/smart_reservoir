@@ -122,10 +122,15 @@ void SmartReservoir::begin() {
   else
       gLogger->println("Failed to start reporter");
 
-  // Scheduler: update fill state every second
+  // Scheduler: update fill state every 250ms
+  // also turn off circulation pump immediately if fill level is too low, just in case
   scheduler_.addTimedTask([this]() {
       fillState_.update();
       fillStateDisplay_.update();
+      if (circulationPumpPin_ >= 0 && fillState_.litersFullMin() < circPumpSettings_.minLevel) {
+        gLogger->println("Circulation pump turned OFF due to low fill level");
+          turnOffCirculationPump();
+      }
     },
     250,  // first delay
     true,  // repeat

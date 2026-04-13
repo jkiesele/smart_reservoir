@@ -17,12 +17,12 @@ class ReservoirSettings : public SettingsBlockBase {
     DEF_SETTING(float, totalVolume, "Total Volume (L)", 10.0f, 0.1f);
     DEF_SETTING(String, injUrl, "Injector hostname", "injector.local", 0);
     //injector IP and MAC address
-    DEF_SETTING(IPAddress, injIP, "Injector IP address", IPAddress(192,168,178,100), 0);
-    DEF_SETTING(tcpmsg::MACAddress, injMAC, "Injector MAC address", tcpmsg::MACAddress(), 0);
+    DEF_SETTING(IPAddress, injIP, "Remote IP address", IPAddress(192,168,178,100), 0);
+    DEF_SETTING(tcpmsg::MACAddress, injMAC, "Remote MAC address", tcpmsg::MACAddress(), 0);
     //own channel ID as int
     DEF_SETTING(int, channelID, "Channel ID", 1, 1);
-    DEF_SETTING(int, tcpPort, "TCP Port (in and out, 0-65535, out only affected after restart)", 12345, 1);
-    DEF_SETTING(bool, sendActive, "Send reports to injector", false, 0);
+    DEF_SETTING(int, tcpPort, "TCP Port of remote", 12345, 1);
+    DEF_SETTING(bool, sendActive, "Send reports to remote", false, 0);
 
     bool sanityCheck() override;
 
