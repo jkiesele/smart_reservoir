@@ -34,7 +34,8 @@ class SmartReservoir {
 public:
   SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
                  int                       circulationPumpPin = -1,
-                 int                       temperaturePin = -1);
+                 int                       temperaturePin = -1,
+                 uint8_t                   debugLEDPin = LED_PIN);
 
   ~SmartReservoir() {}
 
@@ -72,6 +73,7 @@ private:
   void scheduleCirculationPump();
   void safeTurnOnCirculationPump();
   void turnOffCirculationPump();
+  bool isCirculationPumpOn() const;
 
   const uint8_t pwmChannel_ = 0;
   const uint8_t pwmRes_ = 8; //bits

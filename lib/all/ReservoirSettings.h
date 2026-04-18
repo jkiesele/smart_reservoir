@@ -34,8 +34,8 @@ public:
     CirculationPumpSettings(): SettingsBlockBase("circPump", "/circPump") {}
     DEF_SETTING(float, minLevel, "Min level for circulation [l]", 1.0f, 0.1f);
     DEF_SETTING(int, circPDay,   "Circ interval [s]",   60, 1);
-    DEF_SETTING(int, circTDay,   "Circ time day [s]",   10, 1);
-    DEF_SETTING(int, circTNight, "Circ time night [s]",   10, 1);
+    DEF_SETTING(int, circTDay,   "Circ time day [s]",   0, 1);
+    DEF_SETTING(int, circTNight, "Circ time night [s]",   0, 1);
     DEF_SETTING(int, dutyCycle, "Duty cycle [%]",      100, 1);
     DEF_SETTING(int, pwmFreq, "PWM frequency [Hz]",  1000, 1);
 

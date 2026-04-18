@@ -5,7 +5,8 @@
 
 SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
                                int                       circulationPumpPin,
-                               int                       temperaturePin)
+                               int                       temperaturePin,
+                               uint8_t               debugLEDPin)
 : 
   circulationPumpPin_(circulationPumpPin),
   settings_(touchPinsAndFractions.points().size()), // pass number of pads to settings
@@ -16,7 +17,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   pumpRunningDisplay_("pumpRunning", 2, false),//2s update interval, initial false
   temperatureDisplay_("temperature", 60, 0.0f), // updates every 60s, initial 0.0
   forceSendButton_("fSend", "Force Send", [this]() { onForceSendButtonClick(); }, 2), // callback for button click
-  led_(),
+  led_(debugLEDPin),
   scheduler_(),
   timeManager_(),
   wifi_(secret::ssid, secret::password),
@@ -127,7 +128,9 @@ void SmartReservoir::begin() {
   scheduler_.addTimedTask([this]() {
       fillState_.update();
       fillStateDisplay_.update();
-      if (circulationPumpPin_ >= 0 && fillState_.litersFullMin() < circPumpSettings_.minLevel) {
+      if (circulationPumpPin_ >= 0 
+        && fillState_.litersFullMin() < circPumpSettings_.minLevel
+        && isCirculationPumpOn()) {
         gLogger->println("Circulation pump turned OFF due to low fill level");
           turnOffCirculationPump();
       }
@@ -156,8 +159,11 @@ void SmartReservoir::begin() {
     if (actual == 0) {
         gLogger->println("Failed to configure PWM, falling back to 1000 Hz");
         ledcSetup(pwmChannel_, 1000, pwmRes_);
+        currentFreq = 1000; // set to fallback frequency
     }
-    currentFreq = circPumpSettings_.pwmFreq; // set it to the actual frequency to avoid unnecessary reconfigurations later
+    else{
+        currentFreq = circPumpSettings_.pwmFreq; // set to configured frequency
+    }
     ledcAttachPin(circulationPumpPin_,pwmChannel_);
     scheduleCirculationPump();
   }
@@ -251,6 +257,13 @@ void SmartReservoir::scheduleCirculationPump(){
     ledcWrite(pwmChannel_, 0);
     pumpRunningDisplay_.update(false);
     // gLogger->println("Circulation pump turned OFF");
+  }
+
+  bool SmartReservoir::isCirculationPumpOn() const {
+    if(circulationPumpPin_<0) 
+       return false;
+    // use the pwm setting here to determine
+    return ledcRead(pwmChannel_) > 0;
   }
 
   void SmartReservoir::updateTemperature() {

@@ -3,8 +3,8 @@
 #include "FillSensorConfig.h"
 
 
-//#define IS_TEST_RESERVOIR
-#define IS_LETTUCE_TREE
+#define IS_TEST_RESERVOIR
+//#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
 //#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
@@ -16,6 +16,7 @@
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup
 FillSensorConfig config = {
+    {1, 0.1f},   // bottom sensor at pin 4, 10% fill
     {4, 0.25f}, // bottom sensor at pin 4,
     {5, 0.5f},  // middle sensor at pin 5,
     {6, 0.75f}, // upper-middle sensor at pin 6,
@@ -23,6 +24,8 @@ FillSensorConfig config = {
 };
 //no circulation pump for test reservoir
 int8_t circulationPumpPin = -1; // set to -1 if no pump
+int8_t temperaturePin = -1; // optional temperature sensor on pin 2
+const uint8_t ledPin = 48;
 const String systemName = "test-reservoir";
 
 #elif defined(IS_LETTUCE_TREE)
@@ -34,8 +37,9 @@ FillSensorConfig config = {
     {4, 0.75f}, //
     {5, 1.0f}   //
 };
-uint8_t circulationPumpPin = 18; // circulation pump on pin 7
+uint8_t circulationPumpPin = 7; // circulation pump on pin 7
 int temperaturePin = -1; // optional temperature sensor on pin 9
+const uint8_t ledPin = 21;
 const String systemName = "lettuce-tree";
 
 #elif defined(IS_MAIN_RESERVOIR)
@@ -51,6 +55,7 @@ FillSensorConfig config = {
 };
 int circulationPumpPin = -1; // no circulation pump for main reservoir
 int temperaturePin = 13; // optional temperature sensor on pin 9
+const uint8_t ledPin = 21;
 const String systemName = "main-reservoir";
 // main reservoir config (TBI)
 #elif defined(IS_TOMATO_RESERVOIR)
@@ -63,6 +68,7 @@ FillSensorConfig config = {
 };
 int circulationPumpPin = -1; // circulation pump on pin 8
 int temperaturePin = -1; // optional temperature sensor on pin 2
+const uint8_t ledPin = 21; //no effect as it's an S2
 const String systemName = "tomato-reservoir";
 
 #elif defined(IS_CUCUMBER_RESERVOIR)
@@ -74,7 +80,7 @@ const String systemName = "tomato-reservoir";
 #endif
 
 
-SmartReservoir reservoir(config, circulationPumpPin, temperaturePin);
+SmartReservoir reservoir(config, circulationPumpPin, temperaturePin, ledPin);
 
                          
 void setup() {
