@@ -11,7 +11,7 @@
 //#define IS_CUCUMBER_RESERVOIR
 
 #define REWRITE_SYSTEM_NAME true // set to false after first flash to avoid overwriting system name and other settings
-#define REVISION "Rev 3.0b"
+#define REVISION "Rev 3.0c"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup

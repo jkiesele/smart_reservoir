@@ -140,6 +140,12 @@ void SmartReservoir::begin() {
     250   // interval
   );
 
+  //update fill state a few times to make sure we're stable
+  for(int i = 0; i < 5; ++i) {
+      fillState_.update();
+      delay(200);
+  }
+
   //update temperature every 10 minutes
   scheduler_.addTimedTask([this]() {
       updateTemperature();
