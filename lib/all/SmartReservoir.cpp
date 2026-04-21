@@ -209,9 +209,8 @@ void SmartReservoir::scheduleCirculationPump(){
         runS = circPumpSettings_.circTNight;
     }
     periodS -= runS; // ensure period is time between end of one run and start of next
-
-    int nextRun = periodS * SECOND - runS * SECOND;
-    if(nextRun < 0) nextRun = 0; // just in case, should not happen due to sanity check in settings but better safe than sorry
+    
+    if(periodS < 1) periodS = 1; // just in case, to avoid too fast rescheduling; 
     //schedule
     scheduler_.addTimedTask([this, runS]() {
         // turn off after timeMS
@@ -232,7 +231,7 @@ void SmartReservoir::scheduleCirculationPump(){
         false); // do not repeat
 
     }, 
-    nextRun, // schedule the next run for the correct time after the current one ends
+    periodS * SECOND, // schedule the next run for the correct time after the current one ends
     false); // don't repeat, self-reschedule
 
 }

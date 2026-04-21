@@ -30,9 +30,9 @@ bool CirculationPumpSettings::sanityCheck() {
         minLevel=0;
         ret = false;
     }
-    if (circPDay   < 0) {
-        gLogger->println("CirculationPumpSettings: circPDay < 0");
-        circPDay = 0;
+    if (circPDay   < 10) {
+        gLogger->println("CirculationPumpSettings: circPDay < 10");
+        circPDay = 10;
         ret = false;
     }
     if (circTDay   < 0) {
