@@ -111,7 +111,10 @@ void SmartReservoir::begin() {
   gLogger->println("Touch sensors initialized");
 
   //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
-  fillState_.update();
+  for(int i = 0; i < 10; ++i) {
+      fillState_.update();
+      delay(100);
+  }
   fillStateDisplay_.update();
   updateTemperature();
   
@@ -140,11 +143,6 @@ void SmartReservoir::begin() {
     250   // interval
   );
 
-  //update fill state a few times to make sure we're stable
-  for(int i = 0; i < 5; ++i) {
-      fillState_.update();
-      delay(200);
-  }
 
   //update temperature every 10 minutes
   scheduler_.addTimedTask([this]() {
