@@ -3,15 +3,14 @@
 #include "FillSensorConfig.h"
 
 
-#define IS_TEST_RESERVOIR
-//#define IS_LETTUCE_TREE
+//#define IS_TEST_RESERVOIR
+#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
 //#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
 //#define IS_CUCUMBER_RESERVOIR
 
-#define REWRITE_SYSTEM_NAME true // set to false after first flash to avoid overwriting system name and other settings
-#define REVISION "Rev 3.0c"
+#define REVISION "Rev 3.0d"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup

@@ -237,6 +237,10 @@ void SmartReservoir::scheduleCirculationPump(){
   void SmartReservoir::safeTurnOnCirculationPump(){
     if(circulationPumpPin_<0) 
        return;
+
+    if(! circPumpSettings_.enabled)
+        return;
+
     //check if fill state is high enough
     if (fillState_.litersFullMin() < circPumpSettings_.minLevel){
         gLogger->println("Circulation pump not turned ON: fill level too low");

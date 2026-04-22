@@ -32,6 +32,7 @@ class ReservoirSettings : public SettingsBlockBase {
 class CirculationPumpSettings : public SettingsBlockBase {
 public:
     CirculationPumpSettings(): SettingsBlockBase("circPump", "/circPump") {}
+    DEF_SETTING(bool, enabled, "Enable circulation pump", false, 0);
     DEF_SETTING(float, minLevel, "Min level for circulation [l]", 1.0f, 0.1f);
     DEF_SETTING(int, circPDay,   "Circ interval [s]",   60, 1);
     DEF_SETTING(int, circTDay,   "Circ time day [s]",   0, 1);
