@@ -30,11 +30,9 @@ const String systemName = "test-reservoir";
 #elif defined(IS_LETTUCE_TREE)
 // lettuce tree config, adjust pins and fractions as needed for your setup
 FillSensorConfig config = {
-    {1, 0.2f}, // 
-    {2, 0.25f}, //
-    {3, 0.5f},  // 
-    {4, 0.75f}, //
-    {5, 1.0f}   //
+    {1, 0.5f}, // 
+    {2, 0.75f}, //
+    {3, 1.0f},  // 
 };
 uint8_t circulationPumpPin = 7; // circulation pump on pin 7
 int temperaturePin = -1; // optional temperature sensor on pin 9
