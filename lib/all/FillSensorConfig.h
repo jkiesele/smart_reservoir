@@ -11,10 +11,13 @@ struct FillSensorPoint {
 
 class FillSensorConfig {
 public:
-    FillSensorConfig(std::initializer_list<FillSensorPoint> points)
-        : points_(points) {}
+    FillSensorConfig(std::initializer_list<FillSensorPoint> points,
+    int referencePin = -1)
+        : points_(points), referencePin_(referencePin)
+         {}
 
     const std::vector<FillSensorPoint>& points() const { return points_; }
+    const int referencePin() const { return referencePin_; }
 
     bool isValid() const {
         if (points_.empty()) return false;
@@ -31,4 +34,5 @@ public:
 
 private:
     std::vector<FillSensorPoint> points_;
+    int referencePin_;
 };

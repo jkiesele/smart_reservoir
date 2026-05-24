@@ -8,9 +8,10 @@
 #include <TouchSensor.h>
 #include "FillSensorConfig.h"
 
-#define TOUCH_HYSTERESIS 200 // default hysteresis for touch sensors
+#define TOUCH_HYSTERESIS 300 // default hysteresis for touch sensors
 #define TOUCH_SAMPLES    3   // default number of samples for touch sensors
-#define TOUCH_NMOVINGAVG 0    // default number of samples for moving average
+#define TOUCH_NMOVINGAVG 5    // default number of samples for moving average
+//fill states are slow, so averaging is useful to smooth out noise.
 
 
 
@@ -18,8 +19,8 @@
 struct FillSensorRuntime {
     TouchSensor sensor;
     float fraction = 0.0f;
-    FillSensorRuntime(uint8_t pin, float frac)
-        : sensor(pin, 0, TOUCH_HYSTERESIS, TOUCH_SAMPLES, TOUCH_NMOVINGAVG),
+    FillSensorRuntime(uint8_t pin, float frac, int referencePin)
+        : sensor(pin, 0, TOUCH_HYSTERESIS, TOUCH_SAMPLES, TOUCH_NMOVINGAVG, referencePin),
           fraction(frac) {}
 };
 
@@ -41,7 +42,7 @@ public:
     ReservoirFillState(const FillSensorConfig& config, ReservoirSettings& settings);
 
     void begin();          ///< call from setup()
-    void update();         ///< call periodically
+    void update(bool sanityCheck = true);         ///< call periodically
 
     const ReservoirSettings& settings() const { return settings_; }
 

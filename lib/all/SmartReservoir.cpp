@@ -23,8 +23,19 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   wifi_(secret::ssid, secret::password),
   webInterface_(),
   reporter_(fillState_, settings_),
+  wifiRSSIDisplay_("wifiRSSI", wifi_),
+  temperatureGraph_("tempGraph", 60, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
   otaUpload_(secret::otaPassword)
 {
+    /*
+    
+    
+    WebTimeSeriesGraph(const String& id,
+                       uint32_t updateIntervalSecs,
+                       const String& title,
+                       const String& xLabel,
+                       const String& yUnit,
+                       size_t maxEntries = 144)*/
   // Any global init-at-declaration from the sketch that isn't tied to hardware
   // can be placed here if needed.
   if (temperaturePin >= 0) {
@@ -50,6 +61,7 @@ void SmartReservoir::begin() {
   webLog.begin();
   setLogger(&webLog);
   webLog.mirrorToSerial = true;
+  webLog.setLogSize(40); // keep last 40 messages in memory for web display
 
   if(oneWirep_)
       tempsens_.begin();
@@ -72,7 +84,7 @@ void SmartReservoir::begin() {
 
 
   gLogger->println("Starting WiFi connection...");
-  wifi_.begin();
+  wifi_.begin();//true, false); // don't run in high power mode
   delay(1000);
 
   timeManager_.begin();
@@ -83,13 +95,14 @@ void SmartReservoir::begin() {
   gLogger->println("System ID initialized: " + systemID.systemName());
 
 
-
+  webInterface_.addDisplay("", &wifiRSSIDisplay_);
   // Add pump running display if circulation pump is used
   if (circulationPumpPin_ >= 0) {
-      webInterface_.addDisplay("Pump Running", &pumpRunningDisplay_);
+      webInterface_.addDisplay("", &pumpRunningDisplay_);
   }
   if (oneWirep_) {
       webInterface_.addDisplay("Temperature [˚C]", &temperatureDisplay_);
+      webInterface_.addDisplay("", &temperatureGraph_);
   }
   // Add displays to the web interface
   for (const auto& display : fillStateDisplay_.getDisplays()) {
@@ -110,8 +123,9 @@ void SmartReservoir::begin() {
 
   gLogger->println("Touch sensors initialized");
 
+  delay(100);
   //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
-  for(int i = 0; i < 10; ++i) {
+  for(int i = 0; i < 20; ++i) {
       fillState_.update();
       delay(100);
   }
@@ -154,6 +168,16 @@ void SmartReservoir::begin() {
     1*MINUTE   // interval
   );
 
+  if(oneWirep_) {//add a task to update temperature graph every 5 minutes
+        scheduler_.addTimedTask([this]() {
+            temperatureGraph_.append(timeManager_.getUnixTime(), fillState_.temperature());
+        },
+        10*SECOND,  // first delay ten seconds after start
+        true,  // repeat
+        5*MINUTE   // interval
+        );
+  }
+
 
   if (circulationPumpPin_ >= 0) {
     //init pwm for circulation pump if needed
@@ -171,6 +195,10 @@ void SmartReservoir::begin() {
     ledcAttachPin(circulationPumpPin_,pwmChannel_);
     scheduleCirculationPump();
   }
+
+  //report RSSI once
+  int32_t rssi = wifi_.getSignalStrength();
+  gLogger->println("WiFi RSSI: " + String(rssi) + " dBm");
 
   led_.setGreen();
   delay(1000);

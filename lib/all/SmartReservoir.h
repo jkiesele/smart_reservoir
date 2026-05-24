@@ -26,6 +26,8 @@
 #include "FillSensorConfig.h"
 #include <memory> // for std::unique_ptr
 #include "WebButton.h"//for force send
+#include "WiFiRSSIDisplay.h"
+#include "WebTimeSeriesGraph.h"
 
 
 
@@ -63,7 +65,8 @@ private:
   WiFiWrapper         wifi_;               // constructed with secrets
   BasicWebInterface   webInterface_;
   ReservoirReporter   reporter_;
-
+  WiFiRSSIDisplay     wifiRSSIDisplay_;
+  WebTimeSeriesGraph  temperatureGraph_;
   // -- for button
   void onForceSendButtonClick() {
     reporter_.enableImmediateSend();

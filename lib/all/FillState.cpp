@@ -15,7 +15,7 @@ ReservoirFillState::ReservoirFillState(const FillSensorConfig& config, Reservoir
     //build sensors_ vector from config
     sensors_.reserve(config.points().size());
     for (const auto& p : config.points()) 
-        sensors_.emplace_back(p.pin, p.fraction);
+        sensors_.emplace_back(p.pin, p.fraction, config.referencePin());
 
 }
 
@@ -28,7 +28,7 @@ void ReservoirFillState::begin()
     }
 }
 
-void ReservoirFillState::update()
+void ReservoirFillState::update(bool sanityCheck)
 {
     const auto& thresholds = settings_.thsTouch;
 
@@ -72,6 +72,8 @@ void ReservoirFillState::update()
     // 4) bookkeeping
     capacity_    = settings_.totalVolume;     // litres
     // temperature_ updated externally through temp sensor
+
+    if(!sanityCheck) return; // skip sanity checks if caller requests so
 
     bool allgood = true;
 

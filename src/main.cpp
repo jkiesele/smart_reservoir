@@ -4,13 +4,15 @@
 
 
 //#define IS_TEST_RESERVOIR
-#define IS_LETTUCE_TREE
+
+//#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
-//#define IS_MAIN_RESERVOIR
+#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
 //#define IS_CUCUMBER_RESERVOIR
+//#define IS_CUCUMBER_DWC
 
-#define REVISION "Rev 3.0d"
+#define REVISION "Rev 3.0h"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup
@@ -40,16 +42,17 @@ const uint8_t ledPin = 21;
 const String systemName = "lettuce-tree";
 
 #elif defined(IS_MAIN_RESERVOIR)
-FillSensorConfig config = {
-    {1, 0.125f},
+FillSensorConfig config(
+    {{1, 0.125f},
     {2, 0.25f},
     {3, 0.375f},
     {4, 0.5f},
     {5, 0.625f},
     {6, 0.75f},
     {7, 0.875f},
-    {8, 1.0f}
-};
+    {8, 1.0f}},
+    (int)9 // reference pin for differential measurement, set to -1 if not used
+);
 int circulationPumpPin = -1; // no circulation pump for main reservoir
 int temperaturePin = 13; // optional temperature sensor on pin 9
 const uint8_t ledPin = 21;
@@ -69,7 +72,34 @@ const uint8_t ledPin = 21; //no effect as it's an S2
 const String systemName = "tomato-reservoir";
 
 #elif defined(IS_CUCUMBER_RESERVOIR)
-// cucumber reservoir config (TBI)
+// cucumber reservoir config, basically same as main reservoir // 10 calib pin, 8 is used for mechanical connection, so omit
+
+//on supermini pin 3 touch gets the whole touch system stuck
+
+FillSensorConfig config({
+    {1, 0.125f},
+    {2, 0.25f},
+    {11, 0.375f}, //not on pin 3 because of touch issue
+    {4, 0.5f},
+    {5, 0.625f},
+    {6, 0.75f},
+    {7, 0.875f},
+    {9, 1.0f}
+}, 10 /* reference pin for differential measurement, set to -1 if not used */);
+int circulationPumpPin = -1; // no circulation pump for cucumber reservoir
+int temperaturePin = -1; // no temperature sensor for cucumber reservoir
+const uint8_t ledPin = 48; // using supermini board now waveshare
+const String systemName = "cucumber-reservoir";
+
+#elif defined(IS_CUCUMBER_DWC)
+// only top sensor at pin 2, temp at pin 7, pump at pin 12
+FillSensorConfig config = {
+    {2, 1.0f}   // top sensor at pin 2, 100% fill
+};
+int circulationPumpPin = 12; // circulation pump on pin 12
+int temperaturePin = 7; // optional temperature sensor on pin 7
+const uint8_t ledPin = 48; 
+const String systemName = "cucumber-dwc";
 #elif defined(IS_STRAWBERRY_NFT)
 // strawberry NFT config (TBI)
 #else
