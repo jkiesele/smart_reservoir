@@ -170,7 +170,8 @@ void SmartReservoir::begin() {
 
   if(oneWirep_) {//add a task to update temperature graph every 5 minutes
         scheduler_.addTimedTask([this]() {
-            temperatureGraph_.append(timeManager_.getUnixTime(), fillState_.temperature());
+            //use UTC here, conversion happens in the browser
+            temperatureGraph_.append(timeManager_.getUnixUTCTime(), fillState_.temperature());
         },
         10*SECOND,  // first delay ten seconds after start
         true,  // repeat
