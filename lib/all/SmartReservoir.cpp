@@ -129,7 +129,7 @@ void SmartReservoir::begin() {
   delay(100);
   //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
   for(int i = 0; i < 20; ++i) {
-      fillState_.update();
+      fillState_.update(false); // skip sanity check for initial update to avoid warnings about sensor state at startup
       delay(100);
   }
   fillStateDisplay_.update();
