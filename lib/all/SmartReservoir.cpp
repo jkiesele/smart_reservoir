@@ -179,7 +179,7 @@ void SmartReservoir::begin() {
    },
    10*SECOND,  // first delay ten seconds after start
    true,  // repeat
-   5*MINUTE   // interval
+   30*MINUTE   // interval: 30 minutes
    );
 
 
