@@ -66,7 +66,7 @@ private:
   BasicWebInterface   webInterface_;
   ReservoirReporter   reporter_;
   WiFiRSSIDisplay     wifiRSSIDisplay_;
-  WebTimeSeriesGraph  temperatureGraph_;
+  WebTimeSeriesGraph  temperatureGraph_, fillGraph_; // for historical temperature and fill level data
   // -- for button
   void onForceSendButtonClick() {
     reporter_.enableImmediateSend();

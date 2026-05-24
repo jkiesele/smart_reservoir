@@ -25,6 +25,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   reporter_(fillState_, settings_),
   wifiRSSIDisplay_("wifiRSSI", wifi_),
   temperatureGraph_("tempGraph", 60, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
+  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2), // 5 days of data at 30 min intervals
   otaUpload_(secret::otaPassword)
 {
     /*
@@ -108,6 +109,8 @@ void SmartReservoir::begin() {
   for (const auto& display : fillStateDisplay_.getDisplays()) {
     webInterface_.addDisplay(display.first, display.second);
   }
+  //add fill graph
+  webInterface_.addDisplay("", &fillGraph_);
   // Add force send button to web interface
   webInterface_.addDisplay("Force Send",&forceSendButton_);
   // Add settings display
@@ -168,16 +171,16 @@ void SmartReservoir::begin() {
     1*MINUTE   // interval
   );
 
-  if(oneWirep_) {//add a task to update temperature graph every 5 minutes
-        scheduler_.addTimedTask([this]() {
-            //use UTC here, conversion happens in the browser
-            temperatureGraph_.append(timeManager_.getUnixUTCTime(), fillState_.temperature());
-        },
-        10*SECOND,  // first delay ten seconds after start
-        true,  // repeat
-        5*MINUTE   // interval
-        );
-  }
+   scheduler_.addTimedTask([this]() {
+       //use UTC here, conversion happens in the browser
+        if(oneWirep_) 
+           temperatureGraph_.append(timeManager_.getUnixUTCTime(), fillState_.temperature());
+        fillGraph_.append(timeManager_.getUnixUTCTime(), fillState_.level());
+   },
+   10*SECOND,  // first delay ten seconds after start
+   true,  // repeat
+   5*MINUTE   // interval
+   );
 
 
   if (circulationPumpPin_ >= 0) {
