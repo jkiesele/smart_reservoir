@@ -25,7 +25,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   reporter_(fillState_, settings_),
   wifiRSSIDisplay_("wifiRSSI", wifi_),
   temperatureGraph_("tempGraph", 60, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
-  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2), // 5 days of data at 30 min intervals
+  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2), // filled only when changes are detected
   otaUpload_(secret::otaPassword)
 {
     /*
@@ -175,12 +175,26 @@ void SmartReservoir::begin() {
        //use UTC here, conversion happens in the browser
         if(oneWirep_) 
            temperatureGraph_.append(timeManager_.getUnixUTCTime(), fillState_.temperature());
-        fillGraph_.append(timeManager_.getUnixUTCTime(), fillState_.level());
    },
    10*SECOND,  // first delay ten seconds after start
    true,  // repeat
    30*MINUTE   // interval: 30 minutes
    );
+
+   //check every minute if the fill graph needs an update
+    scheduler_.addTimedTask([this]() {
+        float lastlevel = fillGraph_.lastPoint().y;
+        float currentLevel = fillState_.level();
+        //they should actually be float identical unless sth changes to = should be ok, but just in case...
+        //last level can also be NAN
+        if(isnan(lastlevel) || fabs(lastlevel - currentLevel) > 0.01f) { // only update if level changed by at least 0.01% to avoid noise
+            fillGraph_.append(timeManager_.getUnixUTCTime(), currentLevel);
+        }
+    },
+    15*SECOND,  // first delay fifteen seconds after start
+    true,  // repeat
+    1*MINUTE   // interval: 1 minute
+    );
 
 
   if (circulationPumpPin_ >= 0) {
