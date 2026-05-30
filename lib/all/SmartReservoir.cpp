@@ -25,7 +25,7 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   reporter_(fillState_, settings_),
   wifiRSSIDisplay_("wifiRSSI", wifi_),
   temperatureGraph_("tempGraph", 60, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
-  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2), // filled only when changes are detected
+  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2, 0, 100), // filled only when changes are detected
   otaUpload_(secret::otaPassword)
 {
     /*
@@ -183,12 +183,12 @@ void SmartReservoir::begin() {
 
    //check every minute if the fill graph needs an update
     scheduler_.addTimedTask([this]() {
-        float lastlevel = fillGraph_.lastPoint().y;
-        float currentLevel = fillState_.level();
-        //they should actually be float identical unless sth changes to = should be ok, but just in case...
-        //last level can also be NAN
-        if(isnan(lastlevel) || fabs(lastlevel - currentLevel) > 0.01f) { // only update if level changed by at least 0.01% to avoid noise
-            fillGraph_.append(timeManager_.getUnixUTCTime(), currentLevel);
+        //if no pump
+        //otherwise do that in the pump schedule task
+        //the reason is that the running pump can cause small fluctuations
+        //and we want a defined measurement every time right before the pump runs.
+        if(!hasPump()){ 
+            updateFillGraphIfNeeded();
         }
     },
     15*SECOND,  // first delay fifteen seconds after start
@@ -197,7 +197,7 @@ void SmartReservoir::begin() {
     );
 
 
-  if (circulationPumpPin_ >= 0) {
+  if (hasPump()) {
     //init pwm for circulation pump if needed
     auto actual = ledcSetup(pwmChannel_, //channel
       circPumpSettings_.pwmFreq, //freq
@@ -234,7 +234,7 @@ void SmartReservoir::loop() {
 
 
 void SmartReservoir::scheduleCirculationPump(){
-    if(circulationPumpPin_<0) 
+    if(!hasPump()) 
        return;
 
     int periodS = circPumpSettings_.circPDay;
@@ -263,6 +263,8 @@ void SmartReservoir::scheduleCirculationPump(){
             scheduleCirculationPump(); // this is safe in the scheduler implementation!
             return;
         }
+        //update fill graph
+        updateFillGraphIfNeeded();
         safeTurnOnCirculationPump();
 
         scheduler_.addTimedTask([this]() {
@@ -281,7 +283,7 @@ void SmartReservoir::scheduleCirculationPump(){
 }
 
   void SmartReservoir::safeTurnOnCirculationPump(){
-    if(circulationPumpPin_<0) 
+    if(!hasPump()) 
        return;
 
     if(! circPumpSettings_.enabled)
@@ -307,7 +309,7 @@ void SmartReservoir::scheduleCirculationPump(){
     pumpRunningDisplay_.update(true);
   }
   void SmartReservoir::turnOffCirculationPump(){
-    if(circulationPumpPin_<0) 
+    if(!hasPump()) 
        return;
     ledcWrite(pwmChannel_, 0);
     pumpRunningDisplay_.update(false);
@@ -315,7 +317,7 @@ void SmartReservoir::scheduleCirculationPump(){
   }
 
   bool SmartReservoir::isCirculationPumpOn() const {
-    if(circulationPumpPin_<0) 
+    if(!hasPump()) 
        return false;
     // use the pwm setting here to determine
     return ledcRead(pwmChannel_) > 0;
@@ -335,4 +337,25 @@ void SmartReservoir::scheduleCirculationPump(){
           return;
       }
       fillState_.setTemperature(tempC);
+  }
+
+  void SmartReservoir::updateFillGraphIfNeeded() {
+    // This function can be called whenever the fill level is updated to append the new level to the graph
+    auto pastpoint = fillGraph_.lastPoint();
+    float lastlevel = pastpoint.y;
+    float currentLevel = fillState_.level();
+
+    bool addpoint = isnan(lastlevel) || fabs(lastlevel - currentLevel) > 0.01f;
+
+    //now add a new point at least every 6 hours even if the level does not change
+    uint32_t now = timeManager_.getUnixUTCTime();
+    if(!isnan(pastpoint.y) && now - pastpoint.x >= 6*3600){
+        addpoint = true;
+    }
+
+    //they should actually be float identical unless sth changes to = should be ok, but just in case...
+    //last level can also be NAN
+    if(addpoint) { // only update if level changed by at least 0.01% to avoid noise
+        fillGraph_.append(timeManager_.getUnixUTCTime(), currentLevel);
+    }
   }

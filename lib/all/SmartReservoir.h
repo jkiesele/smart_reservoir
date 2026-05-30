@@ -87,4 +87,6 @@ private:
   std::unique_ptr<OneWire> oneWirep_;
   DallasTemperature tempsens_;
   void updateTemperature();
+  void updateFillGraphIfNeeded();
+  bool hasPump() const { return circulationPumpPin_ >= 0; }
 };
