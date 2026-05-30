@@ -128,7 +128,7 @@ void SmartReservoir::begin() {
 
   delay(100);
   //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
-  for(int i = 0; i < 20; ++i) {
+  for(int i = 0; i < 40; ++i) {
       fillState_.update(false); // skip sanity check for initial update to avoid warnings about sensor state at startup
       delay(100);
   }
@@ -181,20 +181,21 @@ void SmartReservoir::begin() {
    30*MINUTE   // interval: 30 minutes
    );
 
-   //check every minute if the fill graph needs an update
-    scheduler_.addTimedTask([this]() {
-        //if no pump
-        //otherwise do that in the pump schedule task
-        //the reason is that the running pump can cause small fluctuations
-        //and we want a defined measurement every time right before the pump runs.
-        if(!hasPump()){ 
+   if(!hasPump()){ 
+       //check every minute if the fill graph needs an update
+        scheduler_.addTimedTask([this]() {
+            //if no pump
+            //otherwise do that in the pump schedule task
+            //the reason is that the running pump can cause small fluctuations
+            //and we want a defined measurement every time right before the pump runs.
             updateFillGraphIfNeeded();
-        }
-    },
-    15*SECOND,  // first delay fifteen seconds after start
-    true,  // repeat
-    1*MINUTE   // interval: 1 minute
-    );
+        },
+        1*MINUTE,  // first delay
+        true,  // repeat
+        1*MINUTE   // interval: 1 minute
+        );
+    }
+    updateFillGraphIfNeeded(); // initial update of fill graph
 
 
   if (hasPump()) {
@@ -217,6 +218,7 @@ void SmartReservoir::begin() {
   //report RSSI once
   int32_t rssi = wifi_.getSignalStrength();
   gLogger->println("WiFi RSSI: " + String(rssi) + " dBm");
+  gLogger->println("Initial fill level: " + String(fillState_.level()) + " %");
 
   led_.setGreen();
   delay(1000);
