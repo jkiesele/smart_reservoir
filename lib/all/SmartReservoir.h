@@ -47,6 +47,8 @@ public:
   // Optional: body of Arduino loop()
   void loop();
 
+  String revision;
+
 private:
   // ---- Configuration copied from ctor args
   int                 circulationPumpPin_{-1};

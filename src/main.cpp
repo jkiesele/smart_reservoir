@@ -12,7 +12,7 @@
 //#define IS_CUCUMBER_RESERVOIR
 //#define IS_CUCUMBER_DWC
 
-#define REVISION "Rev 3.0n"
+#define REVISION "Rev 3.0r"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup
@@ -85,7 +85,8 @@ FillSensorConfig config({
     {6, 0.75f},
     {7, 0.875f},
     {9, 1.0f}
-}, 10 /* reference pin for differential measurement, set to -1 if not used */);
+}, -1 //10 /* reference pin for differential measurement, set to -1 if not used */
+);
 int circulationPumpPin = -1; // no circulation pump for cucumber reservoir
 int temperaturePin = -1; // no temperature sensor for cucumber reservoir
 const uint8_t ledPin = 48; // using supermini board now waveshare
@@ -117,6 +118,7 @@ void setup() {
   // Enforce compile-time hardware identity; will skip NVS write if unchanged.
   systemID.setSystemName(systemName); 
 
+  reservoir.revision = REVISION;
   reservoir.begin();
   gLogger->print("Smart Reservoir System, software version: ");
   gLogger->println(REVISION);

@@ -114,7 +114,7 @@ void SmartReservoir::begin() {
   // Add force send button to web interface
   webInterface_.addDisplay("Force Send",&forceSendButton_);
   // Add settings display
-  webInterface_.addSettings("Reservoir Settings", &settings_);
+  webInterface_.addSettings("Reservoir Settings - " + revision, &settings_);
   if (circulationPumpPin_>=0) {
       webInterface_.addSettings("Circulation Pump Settings", &circPumpSettings_);
   }
@@ -353,6 +353,18 @@ void SmartReservoir::scheduleCirculationPump(){
     uint32_t now = timeManager_.getUnixUTCTime();
     if(!isnan(pastpoint.y) && now - pastpoint.x >= 6*3600){
         addpoint = true;
+    }
+
+    auto timeStamp = timeManager_.getUnixUTCTime();
+    //check if the time stamp makes sense (e.g. after Jan 1, 2026) 
+    //to avoid adding points with wrong timestamps at the beginning if the time is not set yet
+    if(timeStamp < 1767225600UL){ // Jan 1, 2026 in Unix time
+        addpoint = false;
+    }
+
+    //also a sanity check: check if time stamp is in the future w.r.t. last point
+    if(!isnan(pastpoint.y) && timeStamp < pastpoint.x){
+        addpoint = false;
     }
 
     //they should actually be float identical unless sth changes to = should be ok, but just in case...
