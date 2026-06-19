@@ -229,6 +229,8 @@ void SmartReservoir::begin() {
 
 void SmartReservoir::loop() {
   wifi_.loop();
+  handleNetworkResetEvent();
+
   scheduler_.loop();
   webInterface_.loop();
   reporter_.loop();

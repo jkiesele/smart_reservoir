@@ -91,4 +91,16 @@ private:
   void updateTemperature();
   void updateFillGraphIfNeeded();
   bool hasPump() const { return circulationPumpPin_ >= 0; }
+
+  void handleNetworkResetEvent() {
+    if (!wifi_.consumeNetworkResetEvent()) {
+        return;
+    }
+
+    gLogger->println("[Network] WiFi connection was re-established; restarting TCP messenger.");
+
+    if (!reporter_.recoverConnection()) {
+        gLogger->println("[Network] TCP messenger recover failed.");
+    }
+}
 };

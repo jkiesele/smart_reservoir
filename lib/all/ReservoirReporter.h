@@ -9,7 +9,7 @@
 #include "passwords.h"
 #include "LocalIdentity.h"
 
-#define REPORTER_VERBOSE_LOGGING 0
+#define REPORTER_VERBOSE_LOGGING 1
 
 class ReservoirReporter {
 public:
@@ -33,6 +33,17 @@ public:
     bool isRunning() const;
 
     void loop();
+
+    bool restartConnection(){
+        return messenger_.restart();
+    }
+
+    bool recoverConnection() {
+        awaitingSendResult_ = false;
+        lazySend_ = false;
+        lastReportAttemptMs_ = millis();
+        return restartConnection();
+    }
 
     const tcpmsg::TCPMessenger::SendResult& lastSendResult() const;
 
@@ -61,4 +72,13 @@ private:
     uint32_t lastReportSuccessMs_ = 0;
 
     tcpmsg::TCPMessenger::SendResult lastSendResult_{};
+
+    bool canAttemptSend(uint32_t nowMs) const;
+    bool shouldSendReport(uint32_t nowMs) const;
+    void trySendReport(uint32_t nowMs);
+
+    //for recovering stalled sends
+    uint32_t expectedSendResultTimeoutMs() const;
+    bool sendResultStalled(uint32_t nowMs) const;
+    bool handleSendResultStallIfNeeded(uint32_t nowMs);
 };
