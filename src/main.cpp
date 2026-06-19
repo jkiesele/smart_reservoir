@@ -12,7 +12,7 @@
 //#define IS_CUCUMBER_RESERVOIR
 //#define IS_CUCUMBER_DWC
 
-#define REVISION "Rev 3.0r"
+#define REVISION "Rev 3.0s"
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup
