@@ -24,8 +24,8 @@ SmartReservoir::SmartReservoir(const FillSensorConfig& touchPinsAndFractions,
   webInterface_(),
   reporter_(fillState_, settings_),
   wifiRSSIDisplay_("wifiRSSI", wifi_),
-  temperatureGraph_("tempGraph", 60, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
-  fillGraph_("fillGraph", 60, "Fill Level Over Time", "Time", "%", 5*24*2, 0, 100), // filled only when changes are detected
+  temperatureGraph_("tempGraph", 2, "Temperature Over Time", "Time", "°C", 5*24*2),  // 5 days of data at 30 min intervals
+  fillGraph_("fillGraph", 2, "Fill Level Over Time", "Time", "%", 5*24*2, 0, 100), // filled only when changes are detected
   otaUpload_(secret::otaPassword)
 {
     /*

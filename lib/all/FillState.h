@@ -10,7 +10,7 @@
 
 #define TOUCH_HYSTERESIS 500 // default hysteresis for touch sensors
 #define TOUCH_SAMPLES    3   // default number of samples for touch sensors
-#define TOUCH_NMOVINGAVG 5    // default number of samples for moving average
+#define TOUCH_NMOVINGAVG 10    // default number of samples for moving average
 //fill states are slow, so averaging is useful to smooth out noise.
 
 
