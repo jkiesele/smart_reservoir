@@ -7,12 +7,12 @@
 
 //#define IS_LETTUCE_TREE
 //#define IS_STRAWBERRY_NFT
-//#define IS_MAIN_RESERVOIR
+#define IS_MAIN_RESERVOIR
 //#define IS_TOMATO_RESERVOIR
-#define IS_CUCUMBER_RESERVOIR
+//#define IS_CUCUMBER_RESERVOIR
 //#define IS_CUCUMBER_DWC
 
-#define REVISION "Rev 3.0t" 
+#define REVISION "Rev 3.0v" 
 
 #ifdef IS_TEST_RESERVOIR
 // test reservoir config, adjust pins and fractions as needed for your setup

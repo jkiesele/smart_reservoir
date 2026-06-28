@@ -128,9 +128,9 @@ void SmartReservoir::begin() {
 
   delay(100);
   //do an update so that the reporter has valid initial data to send and the web interface shows something immediately
-  for(int i = 0; i < 40; ++i) {
+  for(int i = 0; i < 80; ++i) {
       fillState_.update(false); // skip sanity check for initial update to avoid warnings about sensor state at startup
-      delay(100);
+      delay(50);
   }
   fillStateDisplay_.update();
   updateTemperature();
@@ -172,9 +172,14 @@ void SmartReservoir::begin() {
   );
 
    scheduler_.addTimedTask([this]() {
-       //use UTC here, conversion happens in the browser
-        if(oneWirep_) 
-           temperatureGraph_.append(timeManager_.getUnixUTCTime(), fillState_.temperature());
+       //make sure we hav valid data before adding to graph
+        if(oneWirep_){
+            const float temp = fillState_.temperature();
+            const uint32_t ts = timeManager_.getUnixUTCTime();
+            if (oneWirep_ && ts > 1767225600UL && temp > -30.0f) { 
+                temperatureGraph_.append(ts, temp);
+            }
+        }
    },
    10*SECOND,  // first delay ten seconds after start
    true,  // repeat

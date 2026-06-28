@@ -9,7 +9,7 @@
 #include "passwords.h"
 #include "LocalIdentity.h"
 
-#define REPORTER_VERBOSE_LOGGING 1
+#define REPORTER_VERBOSE_LOGGING 0
 
 class ReservoirReporter {
 public:
